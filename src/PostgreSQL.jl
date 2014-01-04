@@ -1,5 +1,10 @@
 module PostgreSQL
+    export Postgres    
 
-# package code goes here
+    include("libpq.jl")
+    using .libpq
+    using DBI
 
-end # module
+    include("types.jl")
+    include("dbi.jl")
+end
