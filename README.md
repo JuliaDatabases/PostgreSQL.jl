@@ -10,8 +10,19 @@ using DBI
 using PostgreSQL
 
 conn = connect(Postgres, "localhost", "username", "password", "dbname", 5432)
-
+# code
 disconnect(conn)
+```
+
+### Block Syntax
+
+```julia
+using DBI
+using PostgreSQL
+
+connect(Postgres, "localhost", "username", "password", "dbname", 5432) do conn
+	#code
+end
 ```
 
 
