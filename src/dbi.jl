@@ -25,15 +25,6 @@ function Base.connect(::Type{Postgres},
     Base.connect(Postgres, host, user, passwd, db, string(port))
 end
 
-function Base.connect(f::Function, ::Type{Postgres}, args...)
-    conn = Base.connect(Postgres, args...)
-    try
-        return f(conn)
-    finally
-        DBI.disconnect(conn)
-    end
-end
-
 function DBI.disconnect(db::PostgresDatabaseHandle)
     PQfinish(db.ptr)
     db.closed = true
