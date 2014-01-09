@@ -8,7 +8,7 @@ function Base.connect(::Type{Postgres},
     status = PQstatus(conn)
 
     if status != CONNECTION_OK
-        errmsg = copy(bytestring(PQerrorMessage(conn)))
+        errmsg = bytestring(PQerrorMessage(conn))
         PQfinish(conn)
         error(errmsg)
     end
@@ -36,5 +36,22 @@ function DBI.errcode(db::PostgresDatabaseHandle)
 end
 
 function DBI.errstring(db::PostgresDatabaseHandle)
-    return copy(bytestring(PQerrorMessage(db.ptr)))
+    return bytestring(PQerrorMessage(db.ptr))
+end
+
+function Base.run(db::PostgresDatabaseHandle, sql::String)
+    result = PQexec(db.ptr, sql)
+    status = PQresultStatus(result)
+
+    try
+        if status == PGRES_FATAL_ERROR  # or...
+            statustext = bytestring(PQresStatus(status))
+            errmsg = bytestring(PQresultErrorMessage(result))
+            error("$statustext: $errmsg")
+        end
+    finally
+        PGclear(result)
+    end
+
+    return
 end
