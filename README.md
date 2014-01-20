@@ -10,7 +10,16 @@ using DBI
 using PostgreSQL
 
 conn = connect(Postgres, "localhost", "username", "password", "dbname", 5432)
-# code
+
+stmt = prepare(conn, "SELECT 1::bigint, 2.0::double precision, 'foo'::character varying, " *
+					 "'foo'::character(10);")
+result = execute(stmt)
+for row in result
+	# code
+end
+
+finish(stmt)
+
 disconnect(conn)
 ```
 

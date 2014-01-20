@@ -50,8 +50,62 @@ function Base.run(db::PostgresDatabaseHandle, sql::String)
             error("$statustext: $errmsg")
         end
     finally
-        PGclear(result)
+        PQclear(result)
     end
 
     return
 end
+
+function DBI.prepare(db::PostgresDatabaseHandle, sql::String)
+    stmtname = bytestring(string("__", hash(sql), "__"))
+
+    result = PQprepare(db.ptr, stmtname, sql, 0, C_NULL)
+    PQclear(result)
+
+    return PostgresStatementHandle(db, stmtname)
+end
+
+function DBI.finish(stmt::PostgresStatementHandle)
+    if stmt.db.closed
+        print(STDERR, "WARNING: Connection is closed; no operation performed.")
+    else
+        Base.run(stmt.db, bytestring("DEALLOCATE \"$(stmt.stmtname)\";"))
+    end
+end
+
+function DBI.execute(stmt::PostgresStatementHandle)
+    result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, 0, C_NULL, C_NULL, C_NULL, PGF_BINARY)
+    return stmt.result = PostgresResultHandle(result)
+end
+
+function DBI.fetchrow(stmt::PostgresStatementHandle)
+    error("DBI API not fully implemented")
+end
+
+# Assumes the row exists and has the structure described in PostgresResultHandle
+function unsafe_fetchrow(result::PostgresResultHandle, rownum::Integer)
+    return Any[jldata(PQgetvalue(result.ptr, rownum, i-1), datatype,
+                      PQgetlength(result.ptr, rownum, i-1))
+               for (i, datatype) in enumerate(result.types)]
+end
+
+function DBI.fetchall(result::PostgresResultHandle)
+    return Vector{Any}[row for row in result]
+end
+
+function Base.start(result::PostgresResultHandle)
+    return 0
+end
+
+function Base.next(result::PostgresResultHandle, state)
+    return (unsafe_fetchrow(result, state), state + 1)
+end
+
+function Base.done(result::PostgresResultHandle, state)
+    return state >= result.nrows
+end
+
+# delegate statement iteration to result
+Base.start(stmt::PostgresStatementHandle) = Base.start(stmt.result)
+Base.next(stmt::PostgresStatementHandle, state) = Base.next(stmt.result, state)
+Base.done(stmt::PostgresStatementHandle, state) = Base.done(stmt.result, state)
