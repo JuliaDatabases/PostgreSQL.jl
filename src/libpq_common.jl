@@ -44,6 +44,9 @@ const PG_COPYRES_ATTRS = 0x01
 const PG_COPYRES_TUPLES = 0x02
 const PG_COPYRES_EVENTS = 0x04
 const PG_COPYRES_NOTICEHOOKS = 0x08
+# manually added pg formats
+const PGF_TEXT = 0
+const PGF_BINARY = 1
 # Skipping MacroDefinition: PQsetdb(M_PGHOST,M_PGPORT,M_PGOPT,M_PGTTY,M_DBNAME)PQsetdbLogin(M_PGHOST,M_PGPORT,M_PGOPT,M_PGTTY,M_DBNAME,NULL,NULL)
 # Skipping MacroDefinition: PQfreeNotify(ptr)PQfreemem(ptr)
 const PQnoPasswordSupplied = "fe_sendauth: no password supplied\n"
@@ -112,3 +115,4 @@ typealias PQnoticeProcessor Ptr{Void}
 typealias pqbool Uint8
 typealias pgthreadlock_t Ptr{Void}
 typealias PGconn Void
+typealias PGresult Void

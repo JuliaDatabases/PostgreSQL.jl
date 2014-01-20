@@ -4,6 +4,7 @@
 module libpq
            # types
     export PGconn,
+           PGresult,
            Oid,
            # enums
            ConnStatusType,
@@ -33,6 +34,8 @@ module libpq
            PQTRANS_INTRANS,
            PQTRANS_INERROR,
            PQTRANS_UNKNOWN,
+           PGF_TEXT,
+           PGF_BINARY,
            # connection functions
            PQconnectdb,
            PQconnectdbParams,
@@ -49,7 +52,19 @@ module libpq
            PQstatus,
            PQtransactionStatus,
            PQprotocolVersion,
-           PQerrorMessage
+           PQerrorMessage,
+           # command execution functions
+           PQexec,
+           PQexecParams,
+           PQprepare,
+           PQexecPrepared,
+           PQgetvalue,
+           PQntuples,
+           PQnfields,
+           PQftype,
+           PQgetlength,
+           PQresultStatus,
+           PQclear
 
     include("libpq_common.jl")
 
