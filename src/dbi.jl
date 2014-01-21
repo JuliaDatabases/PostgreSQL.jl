@@ -84,7 +84,8 @@ end
 
 # Assumes the row exists and has the structure described in PostgresResultHandle
 function unsafe_fetchrow(result::PostgresResultHandle, rownum::Integer)
-    return Any[jldata(PQgetvalue(result.ptr, rownum, i-1), datatype,
+    return Any[bool(PQgetisnull(result.ptr, rownum, i-1)) ? None : 
+               jldata(PQgetvalue(result.ptr, rownum, i-1), datatype,
                       PQgetlength(result.ptr, rownum, i-1))
                for (i, datatype) in enumerate(result.types)]
 end

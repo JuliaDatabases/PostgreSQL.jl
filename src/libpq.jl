@@ -59,6 +59,7 @@ module libpq
            PQprepare,
            PQexecPrepared,
            PQgetvalue,
+           PQgetisnull,
            PQntuples,
            PQnfields,
            PQftype,

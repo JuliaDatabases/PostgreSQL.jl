@@ -27,6 +27,7 @@ end
 @pgtype PostgresFloat32 700
 @pgtype PostgresBlankPaddedChar 1042
 @pgtype PostgresVarChar 1043
+@pgtype PostgresUnknown 705
 
 function jldata(ptr::Ptr{Uint8}, ::Type{PostgresBool}, length)
     pointer_to_array(convert(Ptr{Bool}, ptr), 0)[1]
@@ -59,6 +60,10 @@ end
 
 function jldata(ptr::Ptr{Uint8}, ::Type{PostgresVarChar}, length)
     bytestring(ptr)
+end
+
+function jldata(ptr::Ptr{Uint8}, ::Type{PostgresUnknown}, length)
+    None
 end
 
 # dbi
