@@ -63,6 +63,7 @@ module libpq
            PQntuples,
            PQnfields,
            PQftype,
+           PQfname,
            PQgetlength,
            PQresultStatus,
            PQclear

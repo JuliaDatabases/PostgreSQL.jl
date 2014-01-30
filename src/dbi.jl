@@ -84,14 +84,34 @@ end
 
 # Assumes the row exists and has the structure described in PostgresResultHandle
 function unsafe_fetchrow(result::PostgresResultHandle, rownum::Integer)
-    return Any[bool(PQgetisnull(result.ptr, rownum, i-1)) ? None : 
+    return Any[PQgetisnull(result.ptr, rownum, i-1) == 1 ? None :
                jldata(PQgetvalue(result.ptr, rownum, i-1), datatype,
                       PQgetlength(result.ptr, rownum, i-1))
                for (i, datatype) in enumerate(result.types)]
 end
 
+function unsafe_fetchcol_dataarray(result::PostgresResultHandle, colnum::Integer)
+    return @data([PQgetisnull(result.ptr, i, colnum) == 1 ? NA :
+            jldata(PQgetvalue(result.ptr, i, colnum), result.types[colnum+1],
+                   PQgetlength(result.ptr, i, colnum))
+            for i = 0:(PQntuples(result.ptr)-1)])
+end
+
 function DBI.fetchall(result::PostgresResultHandle)
     return Vector{Any}[row for row in result]
+end
+
+function DBI.fetchdf(result::PostgresResultHandle)
+    df = DataFrame()
+    for i = 0:(length(result.types)-1)
+        df[bytestring(PQfname(result.ptr, i))] = unsafe_fetchcol_dataarray(result, i)
+    end
+
+    return df
+end
+
+function Base.length(result::PostgresResultHandle)
+    return PQntuples(result.ptr)
 end
 
 function Base.start(result::PostgresResultHandle)
