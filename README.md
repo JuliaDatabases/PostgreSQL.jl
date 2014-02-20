@@ -38,10 +38,28 @@ end
 ## Requirements
 
 * [DBI.jl](https://github.com/johnmyleswhite/DBI.jl)
+* [DataFrames.jl](https://github.com/JuliaStats/DataFrames.jl) >= v0.5.2
+* [DataArrays.jl](https://github.com/JuliaStats/DataArrays.jl) >= v0.1.2
 * libpq shared library (comes with a standard PostgreSQL client installation)
+* julia 0.3
 
 
 ## Systems
 
 * Tested on Funtoo Linux
 * Should work on other systems provided libpq is avaiable (please file an issue if this is not the case)
+
+
+## TODO (soon)
+
+* Implement more default PostgreSQL type handling
+* Test type handling overrides
+* More comprehensive error handling and tests
+* Support for COPY
+
+
+## TODO (not soon)
+
+* Asynchronous connection support
+* Asynchronous Julia for handling asynchronous connections
+* Testing and compatibility with multiple versions of PostgreSQL and libpq

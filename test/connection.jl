@@ -4,6 +4,7 @@ function test_connection()
     conn = connect(Postgres, "localhost", "postgres")
     @test isa(conn, PostgreSQL.PostgresDatabaseHandle)
     @test conn.status == PostgreSQL.CONNECTION_OK
+    @test errcode(conn) == PostgreSQL.CONNECTION_OK
     @test !conn.closed
     @test bytestring(libpq.PQdb(conn.ptr)) == "postgres"
     @test bytestring(libpq.PQuser(conn.ptr)) == "postgres"
@@ -15,6 +16,7 @@ function test_connection()
     conn = connect(Postgres, "localhost", "postgres") do conn
         @test isa(conn, PostgreSQL.PostgresDatabaseHandle)
         @test conn.status == PostgreSQL.CONNECTION_OK
+        @test errcode(conn) == PostgreSQL.CONNECTION_OK
         @test !conn.closed
         return conn
     end

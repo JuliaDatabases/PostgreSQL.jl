@@ -9,6 +9,7 @@ function test_dbi()
     stmt = prepare(conn, "SELECT 1::bigint, 2.0::double precision, 'foo'::character varying, " *
                          "'foo'::character(10), NULL;")
     result = execute(stmt)
+    @test errcode(result) == PostgreSQL.PGRES_TUPLES_OK
     iterresults = Vector{Any}[]
     for row in result
         @test row[1] === int64(1)
@@ -34,6 +35,17 @@ function test_dbi()
     @test dfrow == allresults[1]
 
     finish(stmt)
+
+    run(conn, """CREATE TEMPORARY TABLE testdbi (
+            id serial PRIMARY KEY,
+            combo integer,
+            name varchar
+        );""")
+
+    stmt = prepare(conn, "INSERT INTO testdbi (combo, name) VALUES(\$1, \$2);")
+    execute(stmt, [1, "Spam spam eggs and spam"])
+    execute(stmt, [5, "Michael Spam Palin"])
+    @test errcode(stmt) == PostgreSQL.PGRES_COMMAND_OK
 
     disconnect(conn)
 end

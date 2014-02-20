@@ -13,7 +13,9 @@ function Base.connect(::Type{Postgres},
         error(errmsg)
     end
 
-    return PostgresDatabaseHandle(conn, status)
+    conn = PostgresDatabaseHandle(conn, status)
+    finalizer(conn, DBI.disconnect)
+    return conn
 end
 
 function Base.connect(::Type{Postgres}, 
@@ -26,18 +28,33 @@ function Base.connect(::Type{Postgres},
 end
 
 function DBI.disconnect(db::PostgresDatabaseHandle)
-    PQfinish(db.ptr)
-    db.closed = true
-    return
+    if db.closed
+        return
+    else
+        PQfinish(db.ptr)
+        db.closed = true
+        return
+    end
 end
 
 function DBI.errcode(db::PostgresDatabaseHandle)
-    error("DBI API not fully implemented")
+    return db.status = PQstatus(db.ptr)
 end
 
 function DBI.errstring(db::PostgresDatabaseHandle)
     return bytestring(PQerrorMessage(db.ptr))
 end
+
+function DBI.errcode(res::PostgresResultHandle)
+    return PQresultStatus(res.ptr)
+end
+
+function DBI.errstring(res::PostgresResultHandle)
+    return bytestring(PQresultErrorMessage(res.ptr))
+end
+
+DBI.errcode(stmt::PostgresStatementHandle) = DBI.errcode(stmt.result)
+DBI.errcode(stmt::PostgresStatementHandle) = DBI.errcode(stmt.result)
 
 function Base.run(db::PostgresDatabaseHandle, sql::String)
     result = PQexec(db.ptr, sql)
@@ -56,25 +73,115 @@ function Base.run(db::PostgresDatabaseHandle, sql::String)
     return
 end
 
-function DBI.prepare(db::PostgresDatabaseHandle, sql::String)
-    stmtname = bytestring(string("__", hash(sql), "__"))
+hashsql(sql::String) = bytestring(string("__", hash(sql), "__"))
 
-    result = PQprepare(db.ptr, stmtname, sql, 0, C_NULL)
+function getparamtypes(result::Ptr{PGresult})
+    nparams = PQnparams(result)
+    return [pgtype(OID{int(PQparamtype(result, i-1))}) for i = 1:nparams]
+end
+
+function getparams!(ptrs::Vector{Ptr{Uint8}}, params, types, lengths)
+    for i = 1:length(ptrs)
+        ptrs[i] = pgdata(types[i], ptrs[i], params[i])
+        if lengths[i] < 0
+            lengths[i] = ccall((:strlen, :libc), Csize_t, (Ptr{Uint8},), p)
+        end
+    end
+end
+
+function cleanupparams(ptrs::Vector{Ptr{Uint8}})
+    for ptr in ptrs
+        if ptr != C_NULL
+            c_free(ptr)
+        end
+    end
+end
+
+function DBI.prepare(db::PostgresDatabaseHandle, sql::String,
+    types::Vector{DataType}=DataType[])
+    stmtname = hashsql(sql)
+
+    oids = Uint32[oid(t) for t in types]
+    if isempty(oids)
+        result = PQprepare(db.ptr, stmtname, sql, 0, C_NULL)
+    else
+        result = PQprepare(db.ptr, stmtname, sql, length(oids), pointer(oids))
+    end
     PQclear(result)
 
-    return PostgresStatementHandle(db, stmtname)
+    result = PQdescribePrepared(db.ptr, stmtname)
+    types = getparamtypes(result)
+    PQclear(result)
+
+    stmt = PostgresStatementHandle(db, stmtname, types)
+    finalizer(stmt, DBI.finish)
+    return stmt
 end
 
 function DBI.finish(stmt::PostgresStatementHandle)
-    if stmt.db.closed
-        print(STDERR, "WARNING: Connection is closed; no operation performed.")
+    if stmt.db.closed || stmt.finished
+        return
     else
         Base.run(stmt.db, bytestring("DEALLOCATE \"$(stmt.stmtname)\";"))
+        return
     end
 end
 
 function DBI.execute(stmt::PostgresStatementHandle)
     result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, 0, C_NULL, C_NULL, C_NULL, PGF_BINARY)
+    return stmt.result = PostgresResultHandle(result)
+end
+
+function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
+    nparams = length(params)
+
+    if nparams != length(stmt.paramtypes)
+        error("Number of parameters in statement ($nparams) does not match number of " *
+            "parameter values ($(length(stmt.paramtypes))).")
+    end
+
+    lengths = zeros(Uint32, nparams)
+    param_ptrs = fill(pointer(Uint8, uint64(0)), nparams)
+    for i = 1:nparams
+        lengths[i] = sizeof(stmt.paramtypes[i])
+
+        if lengths[i] > 0
+            param_ptrs[i] = c_malloc(lengths[i])
+        end
+    end
+    formats = fill(PGF_BINARY, nparams)
+
+    getparams!(param_ptrs, params, stmt.paramtypes, lengths)
+    result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
+        param_ptrs, lengths, formats, PGF_BINARY)
+
+    cleanupparams(param_ptrs)
+
+    return stmt.result = PostgresResultHandle(result)
+end
+
+function executemany(stmt::PostgresStatementHandle, params::Vector{Vector})
+    nparams = length(params[1])
+    nstmtparams = length(stmt.paramtypes)
+    lengths = zeros(Uint32, nparams)
+    param_ptrs = fill(pointer(Uint8, uint64(0)), nparams)
+    for i = 1:nparams
+        lengths[i] = sizeof(stmt.paramtypes[i])
+
+        if lengths[i] > 0
+            param_ptrs[i] = c_malloc(lengths[i])
+        end
+    end
+    formats = fill(PGF_BINARY, nparams)
+
+    for paramvec in params
+        getparams!(param_ptrs, paramvec, stmt.paramtypes, lengths)
+        result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
+            param_ptrs, lengths, formats, PGF_BINARY)
+    end
+
+    cleanupparams(param_ptrs)
+
     return stmt.result = PostgresResultHandle(result)
 end
 
@@ -85,15 +192,15 @@ end
 # Assumes the row exists and has the structure described in PostgresResultHandle
 function unsafe_fetchrow(result::PostgresResultHandle, rownum::Integer)
     return Any[PQgetisnull(result.ptr, rownum, i-1) == 1 ? None :
-               jldata(PQgetvalue(result.ptr, rownum, i-1), datatype,
+               jldata(datatype, PQgetvalue(result.ptr, rownum, i-1),
                       PQgetlength(result.ptr, rownum, i-1))
                for (i, datatype) in enumerate(result.types)]
 end
 
 function unsafe_fetchcol_dataarray(result::PostgresResultHandle, colnum::Integer)
     return @data([PQgetisnull(result.ptr, i, colnum) == 1 ? NA :
-            jldata(PQgetvalue(result.ptr, i, colnum), result.types[colnum+1],
-                   PQgetlength(result.ptr, i, colnum))
+            jldata(result.types[colnum+1], PQgetvalue(result.ptr, i, colnum),
+            PQgetlength(result.ptr, i, colnum))
             for i = 0:(PQntuples(result.ptr)-1)])
 end
 
@@ -104,7 +211,7 @@ end
 function DBI.fetchdf(result::PostgresResultHandle)
     df = DataFrame()
     for i = 0:(length(result.types)-1)
-        df[bytestring(PQfname(result.ptr, i))] = unsafe_fetchcol_dataarray(result, i)
+        df[symbol(bytestring(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
     end
 
     return df
