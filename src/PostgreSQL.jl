@@ -1,5 +1,7 @@
 module PostgreSQL
-    export Postgres    
+    export  Postgres,
+            executemany,
+            escapeliteral
 
     include("libpq.jl")
     using .libpq

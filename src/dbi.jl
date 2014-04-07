@@ -54,14 +54,13 @@ function DBI.errstring(res::PostgresResultHandle)
 end
 
 DBI.errcode(stmt::PostgresStatementHandle) = DBI.errcode(stmt.result)
-DBI.errcode(stmt::PostgresStatementHandle) = DBI.errcode(stmt.result)
+DBI.errstring(stmt::PostgresStatementHandle) = DBI.errstring(stmt.result)
 
-function Base.run(db::PostgresDatabaseHandle, sql::String)
-    result = PQexec(db.ptr, sql)
+function checkerrclear(result::Ptr{PGresult})
     status = PQresultStatus(result)
 
     try
-        if status == PGRES_FATAL_ERROR  # or...
+        if status == PGRES_FATAL_ERROR
             statustext = bytestring(PQresStatus(status))
             errmsg = bytestring(PQresultErrorMessage(result))
             error("$statustext: $errmsg")
@@ -69,9 +68,19 @@ function Base.run(db::PostgresDatabaseHandle, sql::String)
     finally
         PQclear(result)
     end
-
-    return
 end
+
+escapeliteral(db::PostgresDatabaseHandle, value) = value
+escapeliteral(db::PostgresDatabaseHandle, value::String) = escapeliteral(db, bytestring(value))
+
+function escapeliteral(db::PostgresDatabaseHandle, value::Union(ASCIIString, UTF8String))
+    strptr = PQescapeLiteral(db.ptr, value, sizeof(value))
+    str = bytestring(strptr)
+    PQfreemem(strptr)
+    return str
+end
+
+Base.run(db::PostgresDatabaseHandle, sql::String) = checkerrclear(PQexec(db.ptr, sql))
 
 hashsql(sql::String) = bytestring(string("__", hash(sql), "__"))
 
@@ -80,13 +89,20 @@ function getparamtypes(result::Ptr{PGresult})
     return [pgtype(OID{int(PQparamtype(result, i-1))}) for i = 1:nparams]
 end
 
-function getparams!(ptrs::Vector{Ptr{Uint8}}, params, types, lengths)
+function getparams!(ptrs::Vector{Ptr{Uint8}}, params, types, sizes, lengths::Vector{Int32}, nulls)
+    fill!(nulls, false)
     for i = 1:length(ptrs)
-        ptrs[i] = pgdata(types[i], ptrs[i], params[i])
-        if lengths[i] < 0
-            lengths[i] = ccall((:strlen, :libc), Csize_t, (Ptr{Uint8},), p)
+        if params[i] === nothing || params[i] === NA || params[i] === None
+            nulls[i] = true
+        else
+            ptrs[i] = pgdata(types[i], ptrs[i], params[i])
+            if sizes[i] < 0
+                warn("Calling strlen--this should be factored out.")
+                lengths[i] = ccall((:strlen, :libc), Csize_t, (Ptr{Uint8},), ptrs[i]) + 1
+            end
         end
     end
+    return
 end
 
 function cleanupparams(ptrs::Vector{Ptr{Uint8}})
@@ -107,11 +123,12 @@ function DBI.prepare(db::PostgresDatabaseHandle, sql::String,
     else
         result = PQprepare(db.ptr, stmtname, sql, length(oids), pointer(oids))
     end
-    PQclear(result)
+
+    checkerrclear(result)
 
     result = PQdescribePrepared(db.ptr, stmtname)
     types = getparamtypes(result)
-    PQclear(result)
+    checkerrclear(result)
 
     stmt = PostgresStatementHandle(db, stmtname, types)
     finalizer(stmt, DBI.finish)
@@ -123,6 +140,7 @@ function DBI.finish(stmt::PostgresStatementHandle)
         return
     else
         Base.run(stmt.db, bytestring("DEALLOCATE \"$(stmt.stmtname)\";"))
+        stmt.finished = true
         return
     end
 end
@@ -132,6 +150,8 @@ function DBI.execute(stmt::PostgresStatementHandle)
     return stmt.result = PostgresResultHandle(result)
 end
 
+using Debug
+
 function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
     nparams = length(params)
 
@@ -140,48 +160,59 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
             "parameter values ($(length(stmt.paramtypes))).")
     end
 
-    lengths = zeros(Uint32, nparams)
+    sizes = zeros(Int64, nparams)
+    lengths = zeros(Cint, nparams)
     param_ptrs = fill(pointer(Uint8, uint64(0)), nparams)
+    nulls = falses(nparams)
     for i = 1:nparams
-        lengths[i] = sizeof(stmt.paramtypes[i])
+        sizes[i] = sizeof(stmt.paramtypes[i])
 
-        if lengths[i] > 0
-            param_ptrs[i] = c_malloc(lengths[i])
+        if sizes[i] > 0
+            param_ptrs[i] = c_malloc(sizes[i])
+            lengths[i] = sizes[i]
         end
     end
     formats = fill(PGF_BINARY, nparams)
 
-    getparams!(param_ptrs, params, stmt.paramtypes, lengths)
+    getparams!(param_ptrs, params, stmt.paramtypes, sizes, lengths, nulls)
+
     result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
-        param_ptrs, lengths, formats, PGF_BINARY)
+        Ptr{Uint8}[nulls[i] ? C_NULL : param_ptrs[i] for i = 1:nparams],
+        lengths, formats, PGF_BINARY)
 
     cleanupparams(param_ptrs)
 
     return stmt.result = PostgresResultHandle(result)
 end
 
-function executemany(stmt::PostgresStatementHandle, params::Vector{Vector})
-    nparams = length(params[1])
+function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle, params::Union(DataFrame,AbstractVector{T}))
+    nparams = isa(params, DataFrame) ? ncol(params) : length(params[1])
     nstmtparams = length(stmt.paramtypes)
-    lengths = zeros(Uint32, nparams)
+    sizes = zeros(Int64, nparams)
+    lengths = zeros(Cint, nparams)
     param_ptrs = fill(pointer(Uint8, uint64(0)), nparams)
+    nulls = falses(nparams)
     for i = 1:nparams
-        lengths[i] = sizeof(stmt.paramtypes[i])
+        sizes[i] = sizeof(stmt.paramtypes[i])
 
-        if lengths[i] > 0
-            param_ptrs[i] = c_malloc(lengths[i])
+        if sizes[i] > 0
+            param_ptrs[i] = c_malloc(sizes[i])
+            lengths[i] = sizes[i]
         end
     end
     formats = fill(PGF_BINARY, nparams)
-
-    for paramvec in params
-        getparams!(param_ptrs, paramvec, stmt.paramtypes, lengths)
+    
+    result = C_NULL
+    rowiter = isa(params, DataFrame) ? eachrow(params) : params
+    for paramvec in rowiter
+        getparams!(param_ptrs, paramvec, stmt.paramtypes, sizes, lengths, nulls)
         result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
-            param_ptrs, lengths, formats, PGF_BINARY)
+            Ptr{Uint8}[nulls[i] ? C_NULL : param_ptrs[i] for i = 1:nparams], 
+            lengths, formats, PGF_BINARY)
     end
 
     cleanupparams(param_ptrs)
-
+    
     return stmt.result = PostgresResultHandle(result)
 end
 

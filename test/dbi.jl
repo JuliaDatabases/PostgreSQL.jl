@@ -1,3 +1,5 @@
+using Debug
+
 function test_dbi()
     @test Postgres <: DBI.DatabaseSystem
 
@@ -9,7 +11,8 @@ function test_dbi()
     stmt = prepare(conn, "SELECT 1::bigint, 2.0::double precision, 'foo'::character varying, " *
                          "'foo'::character(10), NULL;")
     result = execute(stmt)
-    @test errcode(result) == PostgreSQL.PGRES_TUPLES_OK
+    testdberror(result, PostgreSQL.PGRES_TUPLES_OK)
+
     iterresults = Vector{Any}[]
     for row in result
         @test row[1] === int64(1)
@@ -36,16 +39,70 @@ function test_dbi()
 
     finish(stmt)
 
-    run(conn, """CREATE TEMPORARY TABLE testdbi (
-            id serial PRIMARY KEY,
-            combo integer,
-            name varchar
-        );""")
 
-    stmt = prepare(conn, "INSERT INTO testdbi (combo, name) VALUES(\$1, \$2);")
-    execute(stmt, [1, "Spam spam eggs and spam"])
-    execute(stmt, [5, "Michael Spam Palin"])
-    @test errcode(stmt) == PostgreSQL.PGRES_COMMAND_OK
+    create_str = """CREATE TEMPORARY TABLE testdbi (
+            id serial PRIMARY KEY,
+            combo double precision,
+            quant double precision,
+            name varchar
+        );"""
+
+    run(conn, create_str)
+
+    data = Vector{Any}[ 
+        {1, 4, "Spam spam eggs and spam"},
+        {5, 8, "Michael Spam Palin"},
+        {3, 16, None},
+        {NA, 32, "Foo"}
+    ]
+    
+    insert_str = "INSERT INTO testdbi (combo, quant, name) VALUES(\$1, \$2, \$3);"
+
+    stmt = prepare(conn, insert_str)
+    for row in data
+        execute(stmt, row)
+        testdberror(stmt, PostgreSQL.PGRES_COMMAND_OK)
+    end
+    finish(stmt)
+
+    stmt = prepare(conn, "SELECT combo, name FROM testdbi ORDER BY id;")
+    result = execute(stmt)
+    testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
+    rows = fetchall(result)
+    @test rows[1] == data[1]
+    @test rows[2] == data[2]
+    @test rows[3] == data[3]
+    @test rows[4][1] == None
+    @test rows[4][2] == data[4][2]
+
+    finish(stmt)
+
+    disconnect(conn)
+
+    conn = connect(Postgres, "localhost", "postgres")
+    run(conn, create_str)
+    stmt = prepare(conn, insert_str)
+    executemany(stmt, data)
+    testdberror(stmt, PostgreSQL.PGRES_COMMAND_OK)
+    finish(stmt)
+
+    stmt = prepare(conn, "SELECT combo, name FROM testdbi ORDER BY id;")
+    result = execute(stmt)
+    testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
+    rows = fetchall(result)
+    @test rows[1] == data[1]
+    @test rows[2] == data[2]
+    @test rows[3] == data[3]
+    @test rows[4][1] == None
+    @test rows[4][2] == data[4][2]
+
+    finish(stmt)
+
+    @test escapeliteral(conn, 3) == 3
+    @test escapeliteral(conn, 3.3) == 3.3
+    @test escapeliteral(conn, "foo") == "'foo'"
+    @test escapeliteral(conn, "fo\u2202") == "'fo\u2202'"
+    @test escapeliteral(conn, SubString("myfood", 3, 5)) == "'foo'"
 
     disconnect(conn)
 end

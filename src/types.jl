@@ -79,34 +79,36 @@ function pgdata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}, data::Bool)
 end
 
 function pgdata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Int64, data), 1)
+    convert(Ptr{Uint8}, unsafe_store!(convert(Ptr{Int64}, ptr), hton(convert(Int64, data)), 1))
 end
 
 function pgdata(::Type{PostgresType{:int4}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Int32, data), 1)
+    convert(Ptr{Uint8}, unsafe_store!(convert(Ptr{Int32}, ptr), hton(convert(Int32, data)), 1))
 end
 
 function pgdata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Int16, data), 1)
+    convert(Ptr{Uint8}, unsafe_store!(convert(Ptr{Int16}, ptr), hton(convert(Int16, data)), 1))
 end
 
 function pgdata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Float64, data), 1)
+    convert(Ptr{Uint8}, unsafe_store!(convert(Ptr{Float64}, ptr), 
+        hton(convert(Float64, data)), 1))
 end
 
 function pgdata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Float32, data), 1)
+    convert(Ptr{Uint8}, unsafe_store!(convert(Ptr{Float32}, ptr), 
+        hton(convert(Float32, data)), 1))
 end
 
 function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::Union(ASCIIString, UTF8String))
-    ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(data)))
-    unsafe_copy!(ptr, convert(Ptr{Uint8}, data), sizeof(data))
+    ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(data)+1))
+    unsafe_copy!(ptr, convert(Ptr{Uint8}, data), sizeof(data)+1)
 end
 
 function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::String)
     str = bytestring(data)
-    ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)))
-    unsafe_copy!(ptr, convert(Ptr{Uint8}, str), sizeof(str))
+    ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)+1))
+    unsafe_copy!(ptr, convert(Ptr{Uint8}, str), sizeof(str)+1)
 end
 
 # @pgtypeproxy Uint8 Int16
