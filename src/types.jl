@@ -52,6 +52,15 @@ function storestring!(ptr::Ptr{Uint8}, str::String)
     return ptr
 end
 
+# In text mode, pq returns bytea as a text string "\xAABBCCDD...", for instance
+# Uint8[0x01, 0x23, 0x45] would come in as "\x012345"
+function decode_bytea_hex(s::String)
+    if length(s) < 2 || s[1] != '\\' || s[2] != 'x'
+        error("Malformed bytea string: $s")
+    end
+    return hex2bytes(s[3:end])
+end
+
 jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "FALSE"
 
 jldata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}) = parseint(Int64, bytestring(ptr))
@@ -65,6 +74,8 @@ jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}) = parsefloat(Float64, byt
 jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}) = parsefloat(Float32, bytestring(ptr))
 
 jldata(::PGStringTypes, ptr::Ptr{Uint8}) = bytestring(ptr)
+
+jldata(::Type{PostgresType{:bytea}}, ptr::Ptr{Uint8}) = bytestring(ptr) |> decode_bytea_hex
 
 jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}) = None
 
