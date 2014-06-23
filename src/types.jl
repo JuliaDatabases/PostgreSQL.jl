@@ -39,7 +39,12 @@ end
 @pgtype :float4 700
 @pgtype :bpchar 1042
 @pgtype :varchar 1043
+@pgtype :text 25
 @pgtype :unknown 705
+
+typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
+                              Type{PostgresType{:varchar}},
+                              Type{PostgresType{:text}})
 
 function storestring!(ptr::Ptr{Uint8}, str::String)
     ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)+1))
@@ -59,12 +64,9 @@ jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}) = parsefloat(Float64, byt
 
 jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}) = parsefloat(Float32, bytestring(ptr))
 
-function jldata(::Union(Type{PostgresType{:bpchar}}, Type{PostgresType{:varchar}}),
-        ptr::Ptr{Uint8})
-    bytestring(ptr)
-end
+jldata(::PGStringTypes, ptr::Ptr{Uint8}) = bytestring(ptr)
 
-jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}, length) = None
+jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}) = None
 
 function pgdata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}, data::Bool)
     ptr = data ? storestring!(ptr, "TRUE") : storestring!(ptr, "FALSE")
