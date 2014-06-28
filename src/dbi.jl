@@ -89,6 +89,9 @@ function getparamtypes(result::Ptr{PGresult})
     return [pgtype(OID{int(PQparamtype(result, i-1))}) for i = 1:nparams]
 end
 
+LIBC = @windows ? "msvcrt.dll" : :libc
+strlen(ptr::Ptr{Uint8}) = ccall((:strlen, LIBC), Csize_t, (Ptr{Uint8},), ptr)
+
 function getparams!(ptrs::Vector{Ptr{Uint8}}, params, types, sizes, lengths::Vector{Int32}, nulls)
     fill!(nulls, false)
     for i = 1:length(ptrs)
@@ -98,7 +101,7 @@ function getparams!(ptrs::Vector{Ptr{Uint8}}, params, types, sizes, lengths::Vec
             ptrs[i] = pgdata(types[i], ptrs[i], params[i])
             if sizes[i] < 0
                 warn("Calling strlen--this should be factored out.")
-                lengths[i] = ccall((:strlen, :libc), Csize_t, (Ptr{Uint8},), ptrs[i]) + 1
+                lengths[i] = strlen(ptrs[i]) + 1
             end
         end
     end
