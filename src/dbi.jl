@@ -1,6 +1,6 @@
-function Base.connect(::Type{Postgres}, 
-                      host::String="", 
-                      user::String="", 
+function Base.connect(::Type{Postgres},
+                      host::String="",
+                      user::String="",
                       passwd::String="",
                       db::String="",
                       port::String="")
@@ -18,9 +18,9 @@ function Base.connect(::Type{Postgres},
     return conn
 end
 
-function Base.connect(::Type{Postgres}, 
-                      host::String, 
-                      user::String, 
+function Base.connect(::Type{Postgres},
+                      host::String,
+                      user::String,
                       passwd::String,
                       db::String,
                       port::Integer)
@@ -54,14 +54,13 @@ function DBI.errstring(res::PostgresResultHandle)
 end
 
 DBI.errcode(stmt::PostgresStatementHandle) = DBI.errcode(stmt.result)
-DBI.errcode(stmt::PostgresStatementHandle) = DBI.errcode(stmt.result)
+DBI.errstring(stmt::PostgresStatementHandle) = DBI.errstring(stmt.result)
 
-function Base.run(db::PostgresDatabaseHandle, sql::String)
-    result = PQexec(db.ptr, sql)
+function checkerrclear(result::Ptr{PGresult})
     status = PQresultStatus(result)
 
     try
-        if status == PGRES_FATAL_ERROR  # or...
+        if status == PGRES_FATAL_ERROR
             statustext = bytestring(PQresStatus(status))
             errmsg = bytestring(PQresultErrorMessage(result))
             error("$statustext: $errmsg")
@@ -69,9 +68,19 @@ function Base.run(db::PostgresDatabaseHandle, sql::String)
     finally
         PQclear(result)
     end
-
-    return
 end
+
+escapeliteral(db::PostgresDatabaseHandle, value) = value
+escapeliteral(db::PostgresDatabaseHandle, value::String) = escapeliteral(db, bytestring(value))
+
+function escapeliteral(db::PostgresDatabaseHandle, value::Union(ASCIIString, UTF8String))
+    strptr = PQescapeLiteral(db.ptr, value, sizeof(value))
+    str = bytestring(strptr)
+    PQfreemem(strptr)
+    return str
+end
+
+Base.run(db::PostgresDatabaseHandle, sql::String) = checkerrclear(PQexec(db.ptr, sql))
 
 hashsql(sql::String) = bytestring(string("__", hash(sql), "__"))
 
@@ -80,13 +89,23 @@ function getparamtypes(result::Ptr{PGresult})
     return [pgtype(OID{int(PQparamtype(result, i-1))}) for i = 1:nparams]
 end
 
-function getparams!(ptrs::Vector{Ptr{Uint8}}, params, types, lengths)
+LIBC = @windows ? "msvcrt.dll" : :libc
+strlen(ptr::Ptr{Uint8}) = ccall((:strlen, LIBC), Csize_t, (Ptr{Uint8},), ptr)
+
+function getparams!(ptrs::Vector{Ptr{Uint8}}, params, types, sizes, lengths::Vector{Int32}, nulls)
+    fill!(nulls, false)
     for i = 1:length(ptrs)
-        ptrs[i] = pgdata(types[i], ptrs[i], params[i])
-        if lengths[i] < 0
-            lengths[i] = ccall((:strlen, :libc), Csize_t, (Ptr{Uint8},), p)
+        if params[i] === nothing || params[i] === NA || params[i] === None
+            nulls[i] = true
+        else
+            ptrs[i] = pgdata(types[i], ptrs[i], params[i])
+            if sizes[i] < 0
+                warn("Calling strlen--this should be factored out.")
+                lengths[i] = strlen(ptrs[i]) + 1
+            end
         end
     end
+    return
 end
 
 function cleanupparams(ptrs::Vector{Ptr{Uint8}})
@@ -107,11 +126,12 @@ function DBI.prepare(db::PostgresDatabaseHandle, sql::String,
     else
         result = PQprepare(db.ptr, stmtname, sql, length(oids), pointer(oids))
     end
-    PQclear(result)
+
+    checkerrclear(result)
 
     result = PQdescribePrepared(db.ptr, stmtname)
     types = getparamtypes(result)
-    PQclear(result)
+    checkerrclear(result)
 
     stmt = PostgresStatementHandle(db, stmtname, types)
     finalizer(stmt, DBI.finish)
@@ -123,12 +143,13 @@ function DBI.finish(stmt::PostgresStatementHandle)
         return
     else
         Base.run(stmt.db, bytestring("DEALLOCATE \"$(stmt.stmtname)\";"))
+        stmt.finished = true
         return
     end
 end
 
 function DBI.execute(stmt::PostgresStatementHandle)
-    result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, 0, C_NULL, C_NULL, C_NULL, PGF_BINARY)
+    result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, 0, C_NULL, C_NULL, C_NULL, PGF_TEXT)
     return stmt.result = PostgresResultHandle(result)
 end
 
@@ -140,44 +161,56 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
             "parameter values ($(length(stmt.paramtypes))).")
     end
 
-    lengths = zeros(Uint32, nparams)
-    param_ptrs = fill(pointer(Uint8, uint64(0)), nparams)
+    sizes = zeros(Int64, nparams)
+    lengths = zeros(Cint, nparams)
+    param_ptrs = fill(convert(Ptr{Uint8}, 0), nparams)
+    nulls = falses(nparams)
     for i = 1:nparams
-        lengths[i] = sizeof(stmt.paramtypes[i])
+        sizes[i] = sizeof(stmt.paramtypes[i])
 
-        if lengths[i] > 0
-            param_ptrs[i] = c_malloc(lengths[i])
+        if sizes[i] > 0
+            param_ptrs[i] = c_malloc(sizes[i])
+            lengths[i] = sizes[i]
         end
     end
-    formats = fill(PGF_BINARY, nparams)
+    formats = fill(PGF_TEXT, nparams)
 
-    getparams!(param_ptrs, params, stmt.paramtypes, lengths)
+    getparams!(param_ptrs, params, stmt.paramtypes, sizes, lengths, nulls)
+
     result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
-        param_ptrs, lengths, formats, PGF_BINARY)
+        Ptr{Uint8}[nulls[i] ? C_NULL : param_ptrs[i] for i = 1:nparams],
+        lengths, formats, PGF_TEXT)
 
     cleanupparams(param_ptrs)
 
     return stmt.result = PostgresResultHandle(result)
 end
 
-function executemany(stmt::PostgresStatementHandle, params::Vector{Vector})
-    nparams = length(params[1])
+function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle,
+        params::Union(DataFrame,AbstractVector{T}))
+    nparams = isa(params, DataFrame) ? ncol(params) : length(params[1])
     nstmtparams = length(stmt.paramtypes)
-    lengths = zeros(Uint32, nparams)
-    param_ptrs = fill(pointer(Uint8, uint64(0)), nparams)
+    sizes = zeros(Int64, nparams)
+    lengths = zeros(Cint, nparams)
+    param_ptrs = fill(convert(Ptr{Uint8}, 0), nparams)
+    nulls = falses(nparams)
     for i = 1:nparams
-        lengths[i] = sizeof(stmt.paramtypes[i])
+        sizes[i] = sizeof(stmt.paramtypes[i])
 
-        if lengths[i] > 0
-            param_ptrs[i] = c_malloc(lengths[i])
+        if sizes[i] > 0
+            param_ptrs[i] = c_malloc(sizes[i])
+            lengths[i] = sizes[i]
         end
     end
-    formats = fill(PGF_BINARY, nparams)
+    formats = fill(PGF_TEXT, nparams)
 
-    for paramvec in params
-        getparams!(param_ptrs, paramvec, stmt.paramtypes, lengths)
+    result = C_NULL
+    rowiter = isa(params, DataFrame) ? eachrow(params) : params
+    for paramvec in rowiter
+        getparams!(param_ptrs, paramvec, stmt.paramtypes, sizes, lengths, nulls)
         result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
-            param_ptrs, lengths, formats, PGF_BINARY)
+            [convert(Ptr{Uint8}, nulls[i] ? C_NULL : param_ptrs[i]) for i = 1:nparams],
+            lengths, formats, PGF_TEXT)
     end
 
     cleanupparams(param_ptrs)
@@ -192,15 +225,13 @@ end
 # Assumes the row exists and has the structure described in PostgresResultHandle
 function unsafe_fetchrow(result::PostgresResultHandle, rownum::Integer)
     return Any[PQgetisnull(result.ptr, rownum, i-1) == 1 ? None :
-               jldata(datatype, PQgetvalue(result.ptr, rownum, i-1),
-                      PQgetlength(result.ptr, rownum, i-1))
+               jldata(datatype, PQgetvalue(result.ptr, rownum, i-1))
                for (i, datatype) in enumerate(result.types)]
 end
 
 function unsafe_fetchcol_dataarray(result::PostgresResultHandle, colnum::Integer)
     return @data([PQgetisnull(result.ptr, i, colnum) == 1 ? NA :
-            jldata(result.types[colnum+1], PQgetvalue(result.ptr, i, colnum),
-            PQgetlength(result.ptr, i, colnum))
+            jldata(result.types[colnum+1], PQgetvalue(result.ptr, i, colnum))
             for i = 0:(PQntuples(result.ptr)-1)])
 end
 

@@ -68,8 +68,14 @@ module libpq
            PQftype,
            PQfname,
            PQgetlength,
+           PQresStatus,
            PQresultStatus,
-           PQclear
+           PQresultErrorMessage,
+           PQclear,
+           # misc
+           PQescapeLiteral,
+           PQescapeIdentifier,
+           PQfreemem
 
     include("libpq_common.jl")
 

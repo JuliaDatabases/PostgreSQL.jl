@@ -7,11 +7,10 @@ type OID{N} <: AbstractOID end
 oid{T<:AbstractPostgresType}(t::Type{T}) = convert(OID, t)
 pgtype{T<:AbstractOID}(t::Type{T}) = convert(PostgresType, t)
 
-macro pgtype(pgtypename, oid, length)
+macro pgtype(pgtypename, oid)
     quote
         $(esc(:(Base.convert)))(::Type{OID}, ::Type{PostgresType{$pgtypename}}) = OID{$oid}
         $(esc(:(Base.convert)))(::Type{PostgresType}, ::Type{OID{$oid}}) = PostgresType{$pgtypename}
-        $(esc(:(Base.sizeof)))(::Type{PostgresType{$pgtypename}}) = $length::Integer
     end
 end
 
@@ -31,82 +30,72 @@ end
 # @pgtype PostgresVarChar 1043
 # @pgtype PostgresUnknown 705
 
-@pgtype :bool 16 1
-@pgtype :bytea 17 -1
-@pgtype :int8 20 8
-@pgtype :int4 23 4
-@pgtype :int2 21 2
-@pgtype :float8 701 8
-@pgtype :float4 700 4
-@pgtype :bpchar 1042 -1
-@pgtype :varchar 1043 -1
-@pgtype :unknown 705 0
+@pgtype :bool 16
+@pgtype :bytea 17
+@pgtype :int8 20
+@pgtype :int4 23
+@pgtype :int2 21
+@pgtype :float8 701
+@pgtype :float4 700
+@pgtype :bpchar 1042
+@pgtype :varchar 1043
+@pgtype :unknown 705
 
-function jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}, length)
-    pointer_to_array(convert(Ptr{Bool}, ptr), 0)[1]
+function storestring!(ptr::Ptr{Uint8}, str::String)
+    ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)+1))
+    unsafe_copy!(ptr, convert(Ptr{Uint8}, str), sizeof(str)+1)
+    return ptr
 end
 
-function jldata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}, length)
-    ntoh(pointer_to_array(convert(Ptr{Int64}, ptr), (1,))[1])
-end
+jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "FALSE"
 
-function jldata(::Type{PostgresType{:int4}}, ptr::Ptr{Uint8}, length)
-    ntoh(pointer_to_array(convert(Ptr{Int32}, ptr), (1,))[1])
-end
+jldata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}) = parseint(Int64, bytestring(ptr))
 
-function jldata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}, length)
-    ntoh(pointer_to_array(convert(Ptr{Int16}, ptr), (1,))[1])
-end
+jldata(::Type{PostgresType{:int4}}, ptr::Ptr{Uint8}) = parseint(Int32, bytestring(ptr))
 
-function jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}, length)
-    ntoh(pointer_to_array(convert(Ptr{Float64}, ptr), (1,))[1])
-end
+jldata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}) = parseint(Int16, bytestring(ptr))
 
-function jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}, length)
-    ntoh(pointer_to_array(convert(Ptr{Float32}, ptr), (1,))[1])
-end
+jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}) = parsefloat(Float64, bytestring(ptr))
 
-function jldata(::Union(Type{PostgresType{:bpchar}}, Type{PostgresType{:varchar}}), ptr::Ptr{Uint8}, length)
+jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}) = parsefloat(Float32, bytestring(ptr))
+
+function jldata(::Union(Type{PostgresType{:bpchar}}, Type{PostgresType{:varchar}}),
+        ptr::Ptr{Uint8})
     bytestring(ptr)
 end
 
-function jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}, length)
-    None
-end
+jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}, length) = None
 
 function pgdata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}, data::Bool)
-    unsafe_store!(ptr, uint8(data), 1)
+    ptr = data ? storestring!(ptr, "TRUE") : storestring!(ptr, "FALSE")
 end
 
 function pgdata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Int64, data), 1)
+    ptr = storestring!(ptr, string(convert(Int64, data)))
 end
 
 function pgdata(::Type{PostgresType{:int4}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Int32, data), 1)
+    ptr = storestring!(ptr, string(convert(Int32, data)))
 end
 
 function pgdata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Int16, data), 1)
+    ptr = storestring!(ptr, string(convert(Int16, data)))
 end
 
 function pgdata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Float64, data), 1)
+    ptr = storestring!(ptr, string(convert(Float64, data)))
 end
 
 function pgdata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}, data::Number)
-    unsafe_store!(ptr, convert(Float32, data), 1)
+    ptr = storestring!(ptr, string(convert(Float32, data)))
 end
 
 function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::Union(ASCIIString, UTF8String))
-    ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(data)))
-    unsafe_copy!(ptr, convert(Ptr{Uint8}, data), sizeof(data))
+    ptr = storestring!(ptr, data)
 end
 
 function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::String)
-    str = bytestring(data)
-    ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)))
-    unsafe_copy!(ptr, convert(Ptr{Uint8}, str), sizeof(str))
+    ptr = storestring(ptr, bytestring(data))
 end
 
 # @pgtypeproxy Uint8 Int16
