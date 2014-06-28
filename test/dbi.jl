@@ -49,13 +49,13 @@ function test_dbi()
 
     run(conn, create_str)
 
-    data = Vector{Any}[ 
+    data = Vector{Any}[
         {1, 4, "Spam spam eggs and spam"},
         {5, 8, "Michael Spam Palin"},
         {3, 16, None},
         {NA, 32, "Foo"}
     ]
-    
+
     insert_str = "INSERT INTO testdbi (combo, quant, name) VALUES(\$1, \$2, \$3);"
 
     stmt = prepare(conn, insert_str)

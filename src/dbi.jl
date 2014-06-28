@@ -1,6 +1,6 @@
-function Base.connect(::Type{Postgres}, 
-                      host::String="", 
-                      user::String="", 
+function Base.connect(::Type{Postgres},
+                      host::String="",
+                      user::String="",
                       passwd::String="",
                       db::String="",
                       port::String="")
@@ -18,9 +18,9 @@ function Base.connect(::Type{Postgres},
     return conn
 end
 
-function Base.connect(::Type{Postgres}, 
-                      host::String, 
-                      user::String, 
+function Base.connect(::Type{Postgres},
+                      host::String,
+                      user::String,
                       passwd::String,
                       db::String,
                       port::Integer)
@@ -152,8 +152,6 @@ function DBI.execute(stmt::PostgresStatementHandle)
     result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, 0, C_NULL, C_NULL, C_NULL, PGF_BINARY)
     return stmt.result = PostgresResultHandle(result)
 end
-
-using Debug
 
 function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
     nparams = length(params)

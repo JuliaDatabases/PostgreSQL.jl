@@ -2,7 +2,7 @@ function testdata()
     PostgresType = PostgreSQL.PostgresType
     values = {int16(4), int32(4), int64(4), float32(4), float64(4)}
 
-    types = {PostgresType{:int2}, PostgresType{:int4}, PostgresType{:int8}, 
+    types = {PostgresType{:int2}, PostgresType{:int4}, PostgresType{:int8},
         PostgresType{:float4}, PostgresType{:float8}}
 
     p = c_malloc(8)
