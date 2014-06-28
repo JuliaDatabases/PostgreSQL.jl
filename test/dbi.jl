@@ -1,10 +1,10 @@
-using Debug
+using DataArrays
 
 function test_dbi()
     @test Postgres <: DBI.DatabaseSystem
 
     conn = connect(Postgres, "localhost", "postgres")
-    
+
     @test isa(conn, DBI.DatabaseHandle)
     @test isdefined(conn, :status)
 
@@ -32,9 +32,9 @@ function test_dbi()
 
     dfresults = fetchdf(result)
 
-    dfrow = convert(Vector{Any}, vec(array(dfresults[1,:])))
-
+    dfrow = {x for x in DataArray(dfresults[1,:])}
     dfrow[5] = None
+
     @test dfrow == allresults[1]
 
     finish(stmt)
@@ -65,7 +65,7 @@ function test_dbi()
     end
     finish(stmt)
 
-    stmt = prepare(conn, "SELECT combo, name FROM testdbi ORDER BY id;")
+    stmt = prepare(conn, "SELECT combo, quant, name FROM testdbi ORDER BY id;")
     result = execute(stmt)
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     rows = fetchall(result)
@@ -74,6 +74,7 @@ function test_dbi()
     @test rows[3] == data[3]
     @test rows[4][1] == None
     @test rows[4][2] == data[4][2]
+    @test rows[4][3] == data[4][3]
 
     finish(stmt)
 
@@ -86,7 +87,7 @@ function test_dbi()
     testdberror(stmt, PostgreSQL.PGRES_COMMAND_OK)
     finish(stmt)
 
-    stmt = prepare(conn, "SELECT combo, name FROM testdbi ORDER BY id;")
+    stmt = prepare(conn, "SELECT combo, quant, name FROM testdbi ORDER BY id;")
     result = execute(stmt)
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     rows = fetchall(result)

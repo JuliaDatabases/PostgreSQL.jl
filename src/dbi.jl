@@ -149,7 +149,7 @@ function DBI.finish(stmt::PostgresStatementHandle)
 end
 
 function DBI.execute(stmt::PostgresStatementHandle)
-    result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, 0, C_NULL, C_NULL, C_NULL, PGF_BINARY)
+    result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, 0, C_NULL, C_NULL, C_NULL, PGF_TEXT)
     return stmt.result = PostgresResultHandle(result)
 end
 
@@ -163,7 +163,7 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
 
     sizes = zeros(Int64, nparams)
     lengths = zeros(Cint, nparams)
-    param_ptrs = fill(pointer(Uint8, uint64(0)), nparams)
+    param_ptrs = fill(convert(Ptr{Uint8}, 0), nparams)
     nulls = falses(nparams)
     for i = 1:nparams
         sizes[i] = sizeof(stmt.paramtypes[i])
@@ -173,25 +173,26 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
             lengths[i] = sizes[i]
         end
     end
-    formats = fill(PGF_BINARY, nparams)
+    formats = fill(PGF_TEXT, nparams)
 
     getparams!(param_ptrs, params, stmt.paramtypes, sizes, lengths, nulls)
 
     result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
         Ptr{Uint8}[nulls[i] ? C_NULL : param_ptrs[i] for i = 1:nparams],
-        lengths, formats, PGF_BINARY)
+        lengths, formats, PGF_TEXT)
 
     cleanupparams(param_ptrs)
 
     return stmt.result = PostgresResultHandle(result)
 end
 
-function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle, params::Union(DataFrame,AbstractVector{T}))
+function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle,
+        params::Union(DataFrame,AbstractVector{T}))
     nparams = isa(params, DataFrame) ? ncol(params) : length(params[1])
     nstmtparams = length(stmt.paramtypes)
     sizes = zeros(Int64, nparams)
     lengths = zeros(Cint, nparams)
-    param_ptrs = fill(pointer(Uint8, uint64(0)), nparams)
+    param_ptrs = fill(convert(Ptr{Uint8}, 0), nparams)
     nulls = falses(nparams)
     for i = 1:nparams
         sizes[i] = sizeof(stmt.paramtypes[i])
@@ -201,19 +202,19 @@ function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle, params::U
             lengths[i] = sizes[i]
         end
     end
-    formats = fill(PGF_BINARY, nparams)
-    
+    formats = fill(PGF_TEXT, nparams)
+
     result = C_NULL
     rowiter = isa(params, DataFrame) ? eachrow(params) : params
     for paramvec in rowiter
         getparams!(param_ptrs, paramvec, stmt.paramtypes, sizes, lengths, nulls)
         result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
-            Ptr{Uint8}[nulls[i] ? C_NULL : param_ptrs[i] for i = 1:nparams], 
-            lengths, formats, PGF_BINARY)
+            [convert(Ptr{Uint8}, nulls[i] ? C_NULL : param_ptrs[i]) for i = 1:nparams],
+            lengths, formats, PGF_TEXT)
     end
 
     cleanupparams(param_ptrs)
-    
+
     return stmt.result = PostgresResultHandle(result)
 end
 
@@ -224,15 +225,13 @@ end
 # Assumes the row exists and has the structure described in PostgresResultHandle
 function unsafe_fetchrow(result::PostgresResultHandle, rownum::Integer)
     return Any[PQgetisnull(result.ptr, rownum, i-1) == 1 ? None :
-               jldata(datatype, PQgetvalue(result.ptr, rownum, i-1),
-                      PQgetlength(result.ptr, rownum, i-1))
+               jldata(datatype, PQgetvalue(result.ptr, rownum, i-1))
                for (i, datatype) in enumerate(result.types)]
 end
 
 function unsafe_fetchcol_dataarray(result::PostgresResultHandle, colnum::Integer)
     return @data([PQgetisnull(result.ptr, i, colnum) == 1 ? NA :
-            jldata(result.types[colnum+1], PQgetvalue(result.ptr, i, colnum),
-            PQgetlength(result.ptr, i, colnum))
+            jldata(result.types[colnum+1], PQgetvalue(result.ptr, i, colnum))
             for i = 0:(PQntuples(result.ptr)-1)])
 end
 
