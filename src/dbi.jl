@@ -178,7 +178,7 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
     getparams!(param_ptrs, params, stmt.paramtypes, sizes, lengths, nulls)
 
     result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
-        Ptr{Uint8}[nulls[i] ? C_NULL : param_ptrs[i] for i = 1:nparams],
+        [convert(Ptr{Uint8}, nulls[i] ? C_NULL : param_ptrs[i]) for i = 1:nparams],
         lengths, formats, PGF_TEXT)
 
     cleanupparams(param_ptrs)
