@@ -1,5 +1,7 @@
 # PostgreSQL.jl
 
+[![Build Status](https://travis-ci.org/iamed2/PostgreSQL.jl.svg)](https://travis-ci.org/iamed2/PostgreSQL.jl)  [![Coverage Status](https://img.shields.io/coveralls/iamed2/PostgreSQL.jl.svg)](https://coveralls.io/r/iamed2/PostgreSQL.jl)
+
 An interface to PostgreSQL from Julia. Uses libpq (the C PostgreSQL API) and obeys the [DBI.jl protocol](https://github.com/JuliaDB/DBI.jl).
 
 
