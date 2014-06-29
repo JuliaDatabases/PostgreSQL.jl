@@ -40,10 +40,12 @@ end
 ## Requirements
 
 * [DBI.jl](https://github.com/JuliaDB/DBI.jl)
-* [DataFrames.jl](https://github.com/JuliaStats/DataFrames.jl) > v0.5.5 (HEAD, will work with previous versions for some cases)
+* [DataFrames.jl](https://github.com/JuliaStats/DataFrames.jl) > v0.5.6 (tested against branch jmw/symbols, will work with previous versions for some cases)
 * [DataArrays.jl](https://github.com/JuliaStats/DataArrays.jl) >= v0.1.2
 * libpq shared library (comes with a standard PostgreSQL client installation)
 * julia 0.3
+
+Tests require a local PostgreSQL server with a postgres user/database (installed by default with PostgreSQL server installations) with trusted authentication from localhost.
 
 
 ## Systems
