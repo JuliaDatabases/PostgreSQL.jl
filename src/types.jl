@@ -108,7 +108,7 @@ function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::Union(ASC
 end
 
 function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::String)
-    ptr = storestring(ptr, bytestring(data))
+    ptr = storestring!(ptr, bytestring(data))
 end
 
 # @pgtypeproxy Uint8 Int16
