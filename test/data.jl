@@ -1,4 +1,6 @@
-function testdata()
+const nullptr = convert(Ptr{Uint8}, 0)
+
+function test_numerics()
     PostgresType = PostgreSQL.PostgresType
     values = {int16(4), int32(4), int64(4), float32(4), float64(4)}
 
@@ -16,16 +18,6 @@ function testdata()
         c_free(p)
     end
 
-    str = "foobar"
-    data = PostgreSQL.jldata(PostgresType{:varchar}, convert(Ptr{Uint8}, str))
-    @test typeof(str) == typeof(data)
-    @test str == data
-
-    str = "fooba\u211D"
-    data = PostgreSQL.jldata(PostgresType{:varchar}, convert(Ptr{Uint8}, str))
-    @test typeof(str) == typeof(data)
-    @test str == data
-
     p = c_malloc(8)
     try
         for i = 1:length(values)
@@ -38,4 +30,35 @@ function testdata()
     end
 end
 
-testdata()
+function test_strings()
+    PGType = PostgreSQL.PostgresType
+    for typ in {PGType{:varchar}, PGType{:text}, PGType{:bpchar}}
+        for str in {"foobar", "fooba\u211D"}
+            p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, nullptr), str)
+            try
+                data = PostgreSQL.jldata(typ, p)
+                @test typeof(str) == typeof(data)
+                @test str == data
+            finally
+                c_free(p)
+            end
+        end
+    end
+end
+
+function test_bytea()
+    typ = PostgreSQL.PostgresType{:bytea}
+    bin = (Uint8)[0x01, 0x03, 0x42, 0xab, 0xff]
+    p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, nullptr), bin)
+    try
+        data = PostgreSQL.jldata(typ, p)
+        @test typeof(bin) == typeof(data)
+        @test bin == data
+    finally
+        c_free(p)
+    end
+end
+
+test_numerics()
+test_strings()
+test_bytea()
