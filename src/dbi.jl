@@ -110,9 +110,7 @@ end
 
 function cleanupparams(ptrs::Vector{Ptr{Uint8}})
     for ptr in ptrs
-        if ptr != C_NULL
-            c_free(ptr)
-        end
+        c_free(ptr)
     end
 end
 
@@ -169,7 +167,6 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
         sizes[i] = sizeof(stmt.paramtypes[i])
 
         if sizes[i] > 0
-            param_ptrs[i] = c_malloc(sizes[i])
             lengths[i] = sizes[i]
         end
     end
@@ -179,7 +176,7 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
 
     result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
         [convert(Ptr{Uint8}, nulls[i] ? C_NULL : param_ptrs[i]) for i = 1:nparams],
-        lengths, formats, PGF_TEXT)
+        pointer(lengths), pointer(formats), PGF_TEXT)
 
     cleanupparams(param_ptrs)
 
@@ -198,7 +195,6 @@ function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle,
         sizes[i] = sizeof(stmt.paramtypes[i])
 
         if sizes[i] > 0
-            param_ptrs[i] = c_malloc(sizes[i])
             lengths[i] = sizes[i]
         end
     end
@@ -210,7 +206,7 @@ function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle,
         getparams!(param_ptrs, paramvec, stmt.paramtypes, sizes, lengths, nulls)
         result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
             [convert(Ptr{Uint8}, nulls[i] ? C_NULL : param_ptrs[i]) for i = 1:nparams],
-            lengths, formats, PGF_TEXT)
+            pointer(lengths), pointer(formats), PGF_TEXT)
     end
 
     cleanupparams(param_ptrs)

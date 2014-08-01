@@ -39,12 +39,26 @@ end
 @pgtype :float4 700
 @pgtype :bpchar 1042
 @pgtype :varchar 1043
+@pgtype :text 25
 @pgtype :unknown 705
+
+typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
+                              Type{PostgresType{:varchar}},
+                              Type{PostgresType{:text}})
 
 function storestring!(ptr::Ptr{Uint8}, str::String)
     ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)+1))
     unsafe_copy!(ptr, convert(Ptr{Uint8}, str), sizeof(str)+1)
     return ptr
+end
+
+# In text mode, pq returns bytea as a text string "\xAABBCCDD...", for instance
+# Uint8[0x01, 0x23, 0x45] would come in as "\x012345"
+function decode_bytea_hex(s::String)
+    if length(s) < 2 || s[1] != '\\' || s[2] != 'x'
+        error("Malformed bytea string: $s")
+    end
+    return hex2bytes(s[3:end])
 end
 
 jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "FALSE"
@@ -59,12 +73,11 @@ jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}) = parsefloat(Float64, byt
 
 jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}) = parsefloat(Float32, bytestring(ptr))
 
-function jldata(::Union(Type{PostgresType{:bpchar}}, Type{PostgresType{:varchar}}),
-        ptr::Ptr{Uint8})
-    bytestring(ptr)
-end
+jldata(::PGStringTypes, ptr::Ptr{Uint8}) = bytestring(ptr)
 
-jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}, length) = None
+jldata(::Type{PostgresType{:bytea}}, ptr::Ptr{Uint8}) = bytestring(ptr) |> decode_bytea_hex
+
+jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}) = None
 
 function pgdata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}, data::Bool)
     ptr = data ? storestring!(ptr, "TRUE") : storestring!(ptr, "FALSE")
@@ -90,12 +103,16 @@ function pgdata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}, data::Number)
     ptr = storestring!(ptr, string(convert(Float32, data)))
 end
 
-function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::Union(ASCIIString, UTF8String))
+function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::Union(ASCIIString, UTF8String))
     ptr = storestring!(ptr, data)
 end
 
-function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::String)
-    ptr = storestring(ptr, bytestring(data))
+function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::String)
+    ptr = storestring!(ptr, bytestring(data))
+end
+
+function pgdata(::Type{PostgresType{:bytea}}, ptr::Ptr{Uint8}, data::Vector{Uint8})
+    ptr = storestring!(ptr, bytestring("\\x", bytes2hex(data)))
 end
 
 # @pgtypeproxy Uint8 Int16
