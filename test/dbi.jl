@@ -44,19 +44,22 @@ function test_dbi()
             id serial PRIMARY KEY,
             combo double precision,
             quant double precision,
-            name varchar
+            name varchar,
+            color text,
+            bin bytea
         );"""
 
     run(conn, create_str)
 
     data = Vector{Any}[
-        {1, 4, "Spam spam eggs and spam"},
-        {5, 8, "Michael Spam Palin"},
-        {3, 16, None},
-        {NA, 32, "Foo"}
+        {1, 4, "Spam spam eggs and spam", "red", (Uint8)[0x01, 0x02, 0x03, 0x04]},
+        {5, 8, "Michael Spam Palin", "blue", (Uint8)[]},
+        {3, 16, None, None, None},
+        {NA, 32, "Foo", "green", (Uint8)[0xfe, 0xdc, 0xba, 0x98, 0x76]}
     ]
 
-    insert_str = "INSERT INTO testdbi (combo, quant, name) VALUES(\$1, \$2, \$3);"
+    insert_str = "INSERT INTO testdbi (combo, quant, name, color, bin) " *
+                 "VALUES(\$1, \$2, \$3, \$4, \$5);"
 
     stmt = prepare(conn, insert_str)
     for row in data
@@ -65,7 +68,7 @@ function test_dbi()
     end
     finish(stmt)
 
-    stmt = prepare(conn, "SELECT combo, quant, name FROM testdbi ORDER BY id;")
+    stmt = prepare(conn, "SELECT combo, quant, name, color, bin FROM testdbi ORDER BY id;")
     result = execute(stmt)
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     rows = fetchall(result)
@@ -75,6 +78,8 @@ function test_dbi()
     @test rows[4][1] == None
     @test rows[4][2] == data[4][2]
     @test rows[4][3] == data[4][3]
+    @test rows[4][4] == data[4][4]
+    @test rows[4][5] == data[4][5]
 
     finish(stmt)
 
@@ -87,7 +92,7 @@ function test_dbi()
     testdberror(stmt, PostgreSQL.PGRES_COMMAND_OK)
     finish(stmt)
 
-    stmt = prepare(conn, "SELECT combo, quant, name FROM testdbi ORDER BY id;")
+    stmt = prepare(conn, "SELECT combo, quant, name, color, bin FROM testdbi ORDER BY id;")
     result = execute(stmt)
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     rows = fetchall(result)
@@ -96,6 +101,9 @@ function test_dbi()
     @test rows[3] == data[3]
     @test rows[4][1] == None
     @test rows[4][2] == data[4][2]
+    @test rows[4][3] == data[4][3]
+    @test rows[4][4] == data[4][4]
+    @test rows[4][5] == data[4][5]
 
     finish(stmt)
 
