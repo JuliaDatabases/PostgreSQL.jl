@@ -110,9 +110,7 @@ end
 
 function cleanupparams(ptrs::Vector{Ptr{Uint8}})
     for ptr in ptrs
-        if ptr != C_NULL
-            c_free(ptr)
-        end
+        c_free(ptr)
     end
 end
 
@@ -169,7 +167,6 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
         sizes[i] = sizeof(stmt.paramtypes[i])
 
         if sizes[i] > 0
-            param_ptrs[i] = c_malloc(sizes[i])
             lengths[i] = sizes[i]
         end
     end
@@ -198,7 +195,6 @@ function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle,
         sizes[i] = sizeof(stmt.paramtypes[i])
 
         if sizes[i] > 0
-            param_ptrs[i] = c_malloc(sizes[i])
             lengths[i] = sizes[i]
         end
     end
