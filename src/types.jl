@@ -103,12 +103,16 @@ function pgdata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}, data::Number)
     ptr = storestring!(ptr, string(convert(Float32, data)))
 end
 
-function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::Union(ASCIIString, UTF8String))
+function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::Union(ASCIIString, UTF8String))
     ptr = storestring!(ptr, data)
 end
 
-function pgdata(::Type{PostgresType{:varchar}}, ptr::Ptr{Uint8}, data::String)
+function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::String)
     ptr = storestring!(ptr, bytestring(data))
+end
+
+function pgdata(::Type{PostgresType{:bytea}}, ptr::Ptr{Uint8}, data::Vector{Uint8})
+    ptr = storestring!(ptr, bytestring("\\x", bytes2hex(data)))
 end
 
 # @pgtypeproxy Uint8 Int16
