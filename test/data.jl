@@ -1,5 +1,3 @@
-const nullptr = convert(Ptr{Uint8}, 0)
-
 function test_numerics()
     PostgresType = PostgreSQL.PostgresType
     values = {int16(4), int32(4), int64(4), float32(4), float64(4)}
@@ -34,7 +32,7 @@ function test_strings()
     PGType = PostgreSQL.PostgresType
     for typ in {PGType{:varchar}, PGType{:text}, PGType{:bpchar}}
         for str in {"foobar", "fooba\u211D"}
-            p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, nullptr), str)
+            p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), str)
             try
                 data = PostgreSQL.jldata(typ, p)
                 @test typeof(str) == typeof(data)
@@ -49,7 +47,7 @@ end
 function test_bytea()
     typ = PostgreSQL.PostgresType{:bytea}
     bin = (Uint8)[0x01, 0x03, 0x42, 0xab, 0xff]
-    p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, nullptr), bin)
+    p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), bin)
     try
         data = PostgreSQL.jldata(typ, p)
         @test typeof(bin) == typeof(data)
