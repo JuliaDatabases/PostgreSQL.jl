@@ -46,20 +46,21 @@ function test_dbi()
             quant double precision,
             name varchar,
             color text,
-            bin bytea
+            bin bytea,
+            is_planet bool
         );"""
 
     run(conn, create_str)
 
     data = Vector{Any}[
-        {1, 4, "Spam spam eggs and spam", "red", (Uint8)[0x01, 0x02, 0x03, 0x04]},
-        {5, 8, "Michael Spam Palin", "blue", (Uint8)[]},
-        {3, 16, None, None, None},
-        {NA, 32, "Foo", "green", (Uint8)[0xfe, 0xdc, 0xba, 0x98, 0x76]}
+        {1, 4, "Spam spam eggs and spam", "red", (Uint8)[0x01, 0x02, 0x03, 0x04], None},
+        {5, 8, "Michael Spam Palin", "blue", (Uint8)[], true},
+        {3, 16, None, None, None, false},
+        {NA, 32, "Foo", "green", (Uint8)[0xfe, 0xdc, 0xba, 0x98, 0x76], true}
     ]
 
-    insert_str = "INSERT INTO testdbi (combo, quant, name, color, bin) " *
-                 "VALUES(\$1, \$2, \$3, \$4, \$5);"
+    insert_str = "INSERT INTO testdbi (combo, quant, name, color, bin, is_planet) " *
+                 "VALUES(\$1, \$2, \$3, \$4, \$5, \$6);"
 
     stmt = prepare(conn, insert_str)
     for row in data
@@ -68,7 +69,7 @@ function test_dbi()
     end
     finish(stmt)
 
-    stmt = prepare(conn, "SELECT combo, quant, name, color, bin FROM testdbi ORDER BY id;")
+    stmt = prepare(conn, "SELECT combo, quant, name, color, bin, is_planet FROM testdbi ORDER BY id;")
     result = execute(stmt)
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     rows = fetchall(result)
@@ -80,6 +81,7 @@ function test_dbi()
     @test rows[4][3] == data[4][3]
     @test rows[4][4] == data[4][4]
     @test rows[4][5] == data[4][5]
+    @test rows[4][6] == data[4][6]
 
     finish(stmt)
 
@@ -92,7 +94,7 @@ function test_dbi()
     testdberror(stmt, PostgreSQL.PGRES_COMMAND_OK)
     finish(stmt)
 
-    stmt = prepare(conn, "SELECT combo, quant, name, color, bin FROM testdbi ORDER BY id;")
+    stmt = prepare(conn, "SELECT combo, quant, name, color, bin, is_planet FROM testdbi ORDER BY id;")
     result = execute(stmt)
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     rows = fetchall(result)
@@ -104,6 +106,7 @@ function test_dbi()
     @test rows[4][3] == data[4][3]
     @test rows[4][4] == data[4][4]
     @test rows[4][5] == data[4][5]
+    @test rows[4][6] == data[4][6]
 
     finish(stmt)
 

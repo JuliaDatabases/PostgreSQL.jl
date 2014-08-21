@@ -61,7 +61,7 @@ function decode_bytea_hex(s::String)
     return hex2bytes(s[3:end])
 end
 
-jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "FALSE"
+jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "f"
 
 jldata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}) = parseint(Int64, bytestring(ptr))
 
