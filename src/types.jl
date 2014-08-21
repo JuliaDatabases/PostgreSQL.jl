@@ -41,6 +41,7 @@ end
 @pgtype :varchar 1043
 @pgtype :text 25
 @pgtype :unknown 705
+@pgtype :numeric 1700
 
 typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
                               Type{PostgresType{:varchar}},
@@ -61,7 +62,7 @@ function decode_bytea_hex(s::String)
     return hex2bytes(s[3:end])
 end
 
-jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "FALSE"
+jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "f"
 
 jldata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}) = parseint(Int64, bytestring(ptr))
 
@@ -72,6 +73,11 @@ jldata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}) = parseint(Int16, bytestrin
 jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}) = parsefloat(Float64, bytestring(ptr))
 
 jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}) = parsefloat(Float32, bytestring(ptr))
+
+function jldata(::Type{PostgresType{:numeric}}, ptr::Ptr{Uint8})
+    s = bytestring(ptr)
+    return search(s, '.') == 0 ? BigInt(s) : BigFloat(s)
+end
 
 jldata(::PGStringTypes, ptr::Ptr{Uint8}) = bytestring(ptr)
 
@@ -101,6 +107,10 @@ end
 
 function pgdata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}, data::Number)
     ptr = storestring!(ptr, string(convert(Float32, data)))
+end
+
+function pgdata(::Type{PostgresType{:numeric}}, ptr::Ptr{Uint8}, data::Number)
+    ptr = storestring!(ptr, string(data))
 end
 
 function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::Union(ASCIIString, UTF8String))
