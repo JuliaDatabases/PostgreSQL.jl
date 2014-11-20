@@ -44,6 +44,22 @@ function test_strings()
     end
 end
 
+function test_nets()
+    PGType = PostgreSQL.PostgresType
+    types = {PGType{:cidr}, PGType{:inet}, PGType{:macaddr}}
+    strings = {'192.168.1.0/24', '192.168.1.1', '0a:1b:2c:3d:4e:5f')
+    for (typ,str) in zip(types,strings)
+        p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), str)
+        try
+            data = PostgreSQL.jldata(typ, p)
+            @test typeof(str) == typeof(data)
+            @test str == data
+        finally
+            c_free(p)
+        end
+    end
+end
+
 function test_bytea()
     typ = PostgreSQL.PostgresType{:bytea}
     bin = (Uint8)[0x01, 0x03, 0x42, 0xab, 0xff]
@@ -59,4 +75,5 @@ end
 
 test_numerics()
 test_strings()
+test_nets()
 test_bytea()
