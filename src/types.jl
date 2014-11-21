@@ -33,7 +33,6 @@ end
 # @pgtype PostgresInet 869
 # @pgtype PostgresMACAddr 829
 
-
 @pgtype :bool 16
 @pgtype :bytea 17
 @pgtype :int8 20
