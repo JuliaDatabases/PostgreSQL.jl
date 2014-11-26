@@ -47,7 +47,7 @@ end
 function test_nets()
     PGType = PostgreSQL.PostgresType
     types = {PGType{:cidr}, PGType{:inet}, PGType{:macaddr}}
-    strings = {'192.168.1.0/24', '192.168.1.1', '0a:1b:2c:3d:4e:5f')
+    strings = {"192.168.1.0/24", "192.168.1.1", "0a:1b:2c:3d:4e:5f"}
     for (typ,str) in zip(types,strings)
         p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), str)
         try
