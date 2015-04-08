@@ -10,5 +10,5 @@ module PostgreSQL
     using DataArrays
 
     include("types.jl")
-    include("dbi.jl")
+    include("dbi_impl.jl")
 end
