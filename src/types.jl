@@ -29,6 +29,9 @@ end
 # @pgtype PostgresBlankPaddedChar 1042
 # @pgtype PostgresVarChar 1043
 # @pgtype PostgresUnknown 705
+# @pgtype PostgresCIDR 650
+# @pgtype PostgresInet 869
+# @pgtype PostgresMACAddr 829
 
 @pgtype :bool 16
 @pgtype :bytea 17
@@ -42,9 +45,15 @@ end
 @pgtype :text 25
 @pgtype :unknown 705
 @pgtype :numeric 1700
+@pgtype :cidr 650
+@pgtype :inet 869
+@pgtype :macaddr 829
 
 typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
                               Type{PostgresType{:varchar}},
+                              Type{PostgresType{:cidr}},
+                              Type{PostgresType{:inet}},
+                              Type{PostgresType{:macaddr}},
                               Type{PostgresType{:text}})
 
 function storestring!(ptr::Ptr{Uint8}, str::String)
