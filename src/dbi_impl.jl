@@ -27,6 +27,22 @@ function Base.connect(::Type{Postgres},
     Base.connect(Postgres, host, user, passwd, db, string(port))
 end
 
+# Note that for some reason, `do conn` notation
+# doesn't work using this version of the function
+function Base.connect(::Type{Postgres};
+                      dsn::String="")
+    conn = PQconnectdb(dsn)
+    status = PQstatus(conn)
+    if status != CONNECTION_OK
+        errmsg = bytestring(PQerrorMessage(conn))
+        PQfinish(conn)
+        error(errmsg)
+    end
+    conn = PostgresDatabaseHandle(conn, status)
+    finalizer(conn, DBI.disconnect)
+    return conn
+end
+
 function DBI.disconnect(db::PostgresDatabaseHandle)
     if db.closed
         return
