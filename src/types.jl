@@ -42,10 +42,12 @@ end
 @pgtype :text 25
 @pgtype :unknown 705
 @pgtype :numeric 1700
+@pgtype :date 1082
 
 typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
                               Type{PostgresType{:varchar}},
-                              Type{PostgresType{:text}})
+                              Type{PostgresType{:text}},
+                              Type{PostgresType{:date}})
 
 function storestring!(ptr::Ptr{Uint8}, str::String)
     ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)+1))
@@ -61,6 +63,8 @@ function decode_bytea_hex(s::String)
     end
     return hex2bytes(s[3:end])
 end
+
+jldata(::Type{PostgresType{:date}}, ptr::Ptr{Uint8}) = bytestring(ptr)
 
 jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "f"
 
@@ -119,6 +123,11 @@ end
 
 function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::String)
     ptr = storestring!(ptr, bytestring(data))
+end
+
+function pgdata(::PostgresType{:date}, ptr::Ptr{Uint8}, data::String)
+    ptr = storestring!(ptr, bytestring(data))
+    ptr = Dates.DateFormat(ptr)
 end
 
 function pgdata(::Type{PostgresType{:bytea}}, ptr::Ptr{Uint8}, data::Vector{Uint8})
