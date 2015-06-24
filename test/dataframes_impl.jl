@@ -1,4 +1,5 @@
 import DataFrames
+import DataArrays: isna
 
 function test_dataframes()
     df = connect(Postgres, "localhost", "postgres") do conn

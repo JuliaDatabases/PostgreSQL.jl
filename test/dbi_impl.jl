@@ -1,4 +1,5 @@
-using DataArrays
+import DataFrames: DataFrameRow
+import DataArrays: NA
 
 function test_dbi()
     @test Postgres <: DBI.DatabaseSystem
@@ -32,7 +33,7 @@ function test_dbi()
 
     dfresults = fetchdf(result)
 
-    dfrow = {x for x in convert(DataArray, (dfresults[1,:]))}
+    dfrow = {x[2] for x in DataFrameRow(dfresults, 1)}
     dfrow[5] = None
 
     @test dfrow == allresults[1]
