@@ -1,3 +1,5 @@
+import DataArrays: NAtype
+
 abstract AbstractPostgresType
 type PostgresType{Name} <: AbstractPostgresType end
 
@@ -5,12 +7,23 @@ abstract AbstractOID
 type OID{N} <: AbstractOID end
 
 oid{T<:AbstractPostgresType}(t::Type{T}) = convert(OID, t)
-pgtype{T<:AbstractOID}(t::Type{T}) = convert(PostgresType, t)
+pgtype(t::Type) = convert(PostgresType, t)
 
-macro pgtype(pgtypename, oid)
+Base.convert{T}(::Type{Oid}, ::Type{OID{T}}) = convert(Oid, T)
+
+#=macro pgtype(pgtypename, oid)
     quote
         $(esc(:(Base.convert)))(::Type{OID}, ::Type{PostgresType{$pgtypename}}) = OID{$oid}
         $(esc(:(Base.convert)))(::Type{PostgresType}, ::Type{OID{$oid}}) = PostgresType{$pgtypename}
+    end
+end=#
+
+function newpgtype(pgtypename, oid, jltypes)
+    Base.convert(::Type{OID}, ::Type{PostgresType{pgtypename}}) = OID{oid}
+    Base.convert(::Type{PostgresType}, ::Type{OID{oid}}) = PostgresType{pgtypename}
+
+    for t in jltypes
+        Base.convert(::Type{PostgresType}, ::Type{t}) = PostgresType{pgtypename}
     end
 end
 
@@ -30,7 +43,7 @@ end
 # @pgtype PostgresVarChar 1043
 # @pgtype PostgresUnknown 705
 
-@pgtype :bool 16
+#=@pgtype :bool 16
 @pgtype :bytea 17
 @pgtype :int8 20
 @pgtype :int4 23
@@ -40,9 +53,21 @@ end
 @pgtype :bpchar 1042
 @pgtype :varchar 1043
 @pgtype :text 25
-@pgtype :unknown 705
-@pgtype :numeric 1700
-@pgtype :date 1082
+@pgtype :unknown 705=#
+
+newpgtype(:bool, 16, (Bool,))
+newpgtype(:bytea, 17, (Vector{Uint8},))
+newpgtype(:int8, 20, (Int64,))
+newpgtype(:int4, 23, (Int32,))
+newpgtype(:int2, 21, (Int16,))
+newpgtype(:float8, 701, (Float64,))
+newpgtype(:float4, 700, (Float32,))
+newpgtype(:bpchar, 1042, ())
+newpgtype(:varchar, 1043, (ASCIIString,UTF8String))
+newpgtype(:text, 25, ())
+newpgtype(:numeric, 1700, ())
+newpgtype(:date, 1082, ())
+newpgtype(:unknown, 705, (UnionType,NAtype))
 
 typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
                               Type{PostgresType{:varchar}},
@@ -117,7 +142,7 @@ function pgdata(::Type{PostgresType{:numeric}}, ptr::Ptr{Uint8}, data::Number)
     ptr = storestring!(ptr, string(data))
 end
 
-function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::Union(ASCIIString, UTF8String))
+function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::ByteString)
     ptr = storestring!(ptr, data)
 end
 
@@ -171,15 +196,14 @@ end
 
 type PostgresStatementHandle <: DBI.StatementHandle
     db::PostgresDatabaseHandle
-    stmtname::String
-    paramtypes::Vector{DataType}
+    stmt::String
     executed::Int
+    paramtypes::Array{DataType}
     finished::Bool
     result::PostgresResultHandle
 
-    function PostgresStatementHandle(db::PostgresDatabaseHandle, stmtname::String,
-        paramtypes=DataType[], executed=0)
-        new(db, stmtname, paramtypes, executed, false)
+    function PostgresStatementHandle(db::PostgresDatabaseHandle, stmt::String, executed=0, paramtypes::Array{DataType}=DataType[])
+        new(db, stmt, executed, paramtypes, false)
     end
 end
 

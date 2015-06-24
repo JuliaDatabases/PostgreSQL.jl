@@ -130,49 +130,27 @@ function cleanupparams(ptrs::Vector{Ptr{Uint8}})
     end
 end
 
-function DBI.prepare(db::PostgresDatabaseHandle, sql::String,
-    types::Vector{DataType}=DataType[])
-    stmtname = hashsql(sql)
+DBI.prepare(db::PostgresDatabaseHandle, sql::String) = PostgresStatementHandle(db, sql)
 
-    oids = Uint32[oid(t) for t in types]
-    if isempty(oids)
-        result = PQprepare(db.ptr, stmtname, sql, 0, C_NULL)
-    else
-        result = PQprepare(db.ptr, stmtname, sql, length(oids), pointer(oids))
-    end
-
-    checkerrclear(result)
-
-    result = PQdescribePrepared(db.ptr, stmtname)
-    types = getparamtypes(result)
-    checkerrclear(result)
-
-    stmt = PostgresStatementHandle(db, stmtname, types)
-    finalizer(stmt, DBI.finish)
-    return stmt
-end
-
-function DBI.finish(stmt::PostgresStatementHandle)
-    if stmt.db.closed || stmt.finished
-        return
-    else
-        Base.run(stmt.db, bytestring("DEALLOCATE \"$(stmt.stmtname)\";"))
-        stmt.finished = true
-        return
-    end
-end
+DBI.finish(stmt::PostgresStatementHandle) = nothing
 
 function DBI.execute(stmt::PostgresStatementHandle)
-    result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, 0, C_NULL, C_NULL, C_NULL, PGF_TEXT)
+    result = PQexec(stmt.db.ptr, stmt.stmt)
     return stmt.result = PostgresResultHandle(result)
 end
 
 function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
     nparams = length(params)
 
-    if nparams != length(stmt.paramtypes)
-        error("Number of parameters in statement ($nparams) does not match number of " *
-            "parameter values ($(length(stmt.paramtypes))).")
+    if nparams > 0 && isempty(stmt.paramtypes)
+        paramtypes = [pgtype(typeof(p)) for p in params]
+    else
+        paramtypes = stmt.paramtypes
+    end
+
+    if nparams != length(paramtypes)
+        error("Number of parameters in statement ($(length(stmt.paramtypes))) does not match number of " *
+            "parameter values ($nparams).")
     end
 
     sizes = zeros(Int64, nparams)
@@ -180,7 +158,11 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
     param_ptrs = fill(convert(Ptr{Uint8}, 0), nparams)
     nulls = falses(nparams)
     for i = 1:nparams
-        sizes[i] = sizeof(stmt.paramtypes[i])
+        if paramtypes[i] === nothing
+            paramtypes[i] = pgtype(typeof(params[i]))
+        end
+
+        sizes[i] = sizeof(paramtypes[i])
 
         if sizes[i] > 0
             lengths[i] = sizes[i]
@@ -188,9 +170,12 @@ function DBI.execute(stmt::PostgresStatementHandle, params::Vector)
     end
     formats = fill(PGF_TEXT, nparams)
 
-    getparams!(param_ptrs, params, stmt.paramtypes, sizes, lengths, nulls)
+    getparams!(param_ptrs, params, paramtypes, sizes, lengths, nulls)
 
-    result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
+    oids = Oid[convert(Oid, oid(p)) for p in paramtypes]
+
+    result = PQexecParams(stmt.db.ptr, stmt.stmt, nparams,
+        oids,
         [convert(Ptr{Uint8}, nulls[i] ? C_NULL : param_ptrs[i]) for i = 1:nparams],
         pointer(lengths), pointer(formats), PGF_TEXT)
 
@@ -202,13 +187,30 @@ end
 function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle,
         params::Union(DataFrame,AbstractVector{T}))
     nparams = isa(params, DataFrame) ? ncol(params) : length(params[1])
-    nstmtparams = length(stmt.paramtypes)
+
+    if nparams > 0 && isempty(stmt.paramtypes)
+        if isa(params, DataFrame)
+            paramtypes = collect(PostgresType, eltypes(params))
+        else
+            paramtypes = [pgtype(typeof(p)) for p in params[1]]
+        end
+    else
+        paramtypes = stmt.paramtypes
+    end
+
+    if nparams != length(paramtypes)
+        error("Number of parameters in statement ($(length(stmt.paramtypes))) does not match number of " *
+            "parameter values ($nparams).")
+    end
+
     sizes = zeros(Int64, nparams)
     lengths = zeros(Cint, nparams)
     param_ptrs = fill(convert(Ptr{Uint8}, 0), nparams)
     nulls = falses(nparams)
     for i = 1:nparams
-        sizes[i] = sizeof(stmt.paramtypes[i])
+        if paramtypes[i] === nothing
+            paramtypes[i] = pgtype(typeof(params[i]))
+        end
 
         if sizes[i] > 0
             lengths[i] = sizes[i]
@@ -219,8 +221,12 @@ function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle,
     result = C_NULL
     rowiter = isa(params, DataFrame) ? eachrow(params) : params
     for paramvec in rowiter
-        getparams!(param_ptrs, paramvec, stmt.paramtypes, sizes, lengths, nulls)
-        result = PQexecPrepared(stmt.db.ptr, stmt.stmtname, nparams,
+        getparams!(param_ptrs, paramvec, paramtypes, sizes, lengths, nulls)
+
+        oids = Oid[convert(Oid, oid(p)) for p in paramtypes]
+
+        result = PQexecParams(stmt.db.ptr, stmt.stmt, nparams,
+            oids,
             [convert(Ptr{Uint8}, nulls[i] ? C_NULL : param_ptrs[i]) for i = 1:nparams],
             pointer(lengths), pointer(formats), PGF_TEXT)
     end
