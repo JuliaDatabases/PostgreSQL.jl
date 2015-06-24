@@ -1,4 +1,5 @@
 import DataArrays: NAtype
+import Compat: unsafe_convert
 
 abstract AbstractPostgresType
 type PostgresType{Name} <: AbstractPostgresType end
@@ -76,7 +77,7 @@ typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
 
 function storestring!(ptr::Ptr{Uint8}, str::String)
     ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)+1))
-    unsafe_copy!(ptr, convert(Ptr{Uint8}, str), sizeof(str)+1)
+    unsafe_copy!(ptr, unsafe_convert(Ptr{Uint8}, str), sizeof(str)+1)
     return ptr
 end
 
