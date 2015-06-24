@@ -1,17 +1,17 @@
-language: cpp
-compiler:
-  - clang
+language: julia
+os:
+  - osx
+  - linux
+julia:
+  - release
+  - nightly
 notifications:
   email: false
 before_install:
-  - sudo add-apt-repository ppa:staticfloat/julia-deps -y
-  - sudo add-apt-repository ppa:staticfloat/julianightlies -y
-  - sudo apt-get update -qq -y
-  - sudo apt-get install libpcre3-dev julia -y
   - sudo apt-get install postgresql -y
 script:
-  - julia -e 'Pkg.init(); run(`ln -s $(pwd()) $(Pkg.dir("PostgreSQL"))`); Pkg.pin("PostgreSQL"); Pkg.resolve(); Pkg.clone("https://github.com/JuliaDB/DBI.jl")'
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaDB/DBI.jl")'
   - julia -e 'using PostgreSQL; @assert isdefined(:PostgreSQL); @assert typeof(PostgreSQL) === Module'
-  - julia --code-coverage test/runtests.jl
-after_success:
+  - julia -e 'Pkg.test("PostgreSQL"; coverage=true)'
   - julia -e 'cd(Pkg.dir("PostgreSQL")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
