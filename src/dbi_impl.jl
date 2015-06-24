@@ -209,7 +209,7 @@ function executemany{T<:AbstractVector}(stmt::PostgresStatementHandle,
     nulls = falses(nparams)
     for i = 1:nparams
         if paramtypes[i] === nothing
-            paramtypes[i] = pgtype(typeof(params[i]))
+            paramtypes[i] = pgtype(typeof(params[1][i]))
         end
 
         if sizes[i] > 0

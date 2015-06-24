@@ -65,7 +65,7 @@ newpgtype(:float4, 700, (Float32,))
 newpgtype(:bpchar, 1042, ())
 newpgtype(:varchar, 1043, (ASCIIString,UTF8String))
 newpgtype(:text, 25, ())
-newpgtype(:numeric, 1700, ())
+newpgtype(:numeric, 1700, (BigInt,BigFloat))
 newpgtype(:date, 1082, ())
 newpgtype(:unknown, 705, (UnionType,NAtype))
 
@@ -157,6 +157,10 @@ end
 
 function pgdata(::Type{PostgresType{:bytea}}, ptr::Ptr{Uint8}, data::Vector{Uint8})
     ptr = storestring!(ptr, bytestring("\\x", bytes2hex(data)))
+end
+
+function pgdata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}, data)
+    ptr = storestring!(ptr, string(data))
 end
 
 # @pgtypeproxy Uint8 Int16

@@ -32,7 +32,7 @@ function test_dbi()
 
     dfresults = fetchdf(result)
 
-    dfrow = {x for x in DataArray(dfresults[1,:])}
+    dfrow = {x for x in convert(DataArray, (dfresults[1,:]))}
     dfrow[5] = None
 
     @test dfrow == allresults[1]
