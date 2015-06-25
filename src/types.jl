@@ -12,13 +12,6 @@ pgtype(t::Type) = convert(PostgresType, t)
 
 Base.convert{T}(::Type{Oid}, ::Type{OID{T}}) = convert(Oid, T)
 
-#=macro pgtype(pgtypename, oid)
-    quote
-        $(esc(:(Base.convert)))(::Type{OID}, ::Type{PostgresType{$pgtypename}}) = OID{$oid}
-        $(esc(:(Base.convert)))(::Type{PostgresType}, ::Type{OID{$oid}}) = PostgresType{$pgtypename}
-    end
-end=#
-
 function newpgtype(pgtypename, oid, jltypes)
     Base.convert(::Type{OID}, ::Type{PostgresType{pgtypename}}) = OID{oid}
     Base.convert(::Type{PostgresType}, ::Type{OID{oid}}) = PostgresType{pgtypename}
@@ -27,34 +20,6 @@ function newpgtype(pgtypename, oid, jltypes)
         Base.convert(::Type{PostgresType}, ::Type{t}) = PostgresType{pgtypename}
     end
 end
-
-# macro pgtypeproxy(jltype, jltypeproxy)
-#     $(esc(:pgdata))(ptr::Ptr{Uint8}, data::$jltype) = pgdata(ptr, convert($jltypeproxy, data))
-# end
-
-
-# @pgtype PostgresBool 16
-# @pgtype PostgresByteArray 17
-# @pgtype PostgresInt64 20
-# @pgtype PostgresInt32 23
-# @pgtype PostgresInt16 21
-# @pgtype PostgresFloat64 701
-# @pgtype PostgresFloat32 700
-# @pgtype PostgresBlankPaddedChar 1042
-# @pgtype PostgresVarChar 1043
-# @pgtype PostgresUnknown 705
-
-#=@pgtype :bool 16
-@pgtype :bytea 17
-@pgtype :int8 20
-@pgtype :int4 23
-@pgtype :int2 21
-@pgtype :float8 701
-@pgtype :float4 700
-@pgtype :bpchar 1042
-@pgtype :varchar 1043
-@pgtype :text 25
-@pgtype :unknown 705=#
 
 newpgtype(:bool, 16, (Bool,))
 newpgtype(:bytea, 17, (Vector{Uint8},))
@@ -163,10 +128,6 @@ end
 function pgdata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}, data)
     ptr = storestring!(ptr, string(data))
 end
-
-# @pgtypeproxy Uint8 Int16
-# @pgtypeproxy Uint16 Int32
-# @pgtypeproxy Uint32 Int64
 
 # dbi
 abstract Postgres <: DBI.DatabaseSystem
