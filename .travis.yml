@@ -4,6 +4,7 @@ os:
   - linux
 julia:
   - release
+  - nightly
 notifications:
   email: false
 before_install:
