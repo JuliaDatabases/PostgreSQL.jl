@@ -8,7 +8,7 @@ julia:
 notifications:
   email: false
 before_install:
-  - sudo apt-get install postgresql -y
+  - sudo apt-get install postgresql-9.4 -y
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaDB/DBI.jl")'
