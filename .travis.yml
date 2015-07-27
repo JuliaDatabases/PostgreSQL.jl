@@ -16,4 +16,6 @@ script:
   - julia -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaDB/DBI.jl")'
   - julia -e 'using PostgreSQL; @assert isdefined(:PostgreSQL); @assert typeof(PostgreSQL) === Module'
   - julia -e 'Pkg.test("PostgreSQL"; coverage=true)'
-  - julia -e 'cd(Pkg.dir("PostgreSQL")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder())'
+after_success:
+  - julia -e 'cd(Pkg.dir("PostgreSQL")); Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder())'
+  - julia -e 'cd(Pkg.dir("PostgreSQL")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(process_folder())'

@@ -1,6 +1,6 @@
 # PostgreSQL.jl
 
-[![Build Status](https://travis-ci.org/JuliaDB/PostgreSQL.jl.svg)](https://travis-ci.org/JuliaDB/PostgreSQL.jl)  [![Coverage Status](https://img.shields.io/coveralls/JuliaDB/PostgreSQL.jl.svg)](https://coveralls.io/r/JuliaDB/PostgreSQL.jl)
+[![Build Status](https://travis-ci.org/JuliaDB/PostgreSQL.jl.svg)](https://travis-ci.org/JuliaDB/PostgreSQL.jl)  [![Coverage Status](https://img.shields.io/coveralls/JuliaDB/PostgreSQL.jl.svg)](https://coveralls.io/r/JuliaDB/PostgreSQL.jl)  [![codecov.io](http://codecov.io/github/JuliaDB/PostgreSQL.jl/coverage.svg)](http://codecov.io/github/JuliaDB/PostgreSQL.jl)
 
 An interface to PostgreSQL from Julia. Uses libpq (the C PostgreSQL API) and obeys the [DBI.jl protocol](https://github.com/JuliaDB/DBI.jl).
 
