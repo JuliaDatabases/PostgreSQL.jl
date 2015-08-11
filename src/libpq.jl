@@ -84,16 +84,16 @@ module libpq
     @c Cint _IO_feof (Ptr{_IO_FILE},) libpq
     @c Cint _IO_ferror (Ptr{_IO_FILE},) libpq
     @c Cint _IO_peekc_locked (Ptr{_IO_FILE},) libpq
-    @c None _IO_flockfile (Ptr{_IO_FILE},) libpq
-    @c None _IO_funlockfile (Ptr{_IO_FILE},) libpq
+    @c Void _IO_flockfile (Ptr{_IO_FILE},) libpq
+    @c Void _IO_funlockfile (Ptr{_IO_FILE},) libpq
     @c Cint _IO_ftrylockfile (Ptr{_IO_FILE},) libpq
     @c Cint _IO_vfscanf (Ptr{_IO_FILE}, Ptr{Uint8}, Cint, Ptr{Cint}) libpq
     @c Cint _IO_vfprintf (Ptr{_IO_FILE}, Ptr{Uint8}, Cint) libpq
     # @c __ssize_t _IO_padn (Ptr{_IO_FILE}, Cint, __ssize_t) libpq
-    @c Cint _IO_sgetn (Ptr{_IO_FILE}, Ptr{None}, Cint) libpq
+    @c Cint _IO_sgetn (Ptr{_IO_FILE}, Ptr{Void}, Cint) libpq
     @c __off64_t _IO_seekoff (Ptr{_IO_FILE}, __off64_t, Cint, Cint) libpq
     @c __off64_t _IO_seekpos (Ptr{_IO_FILE}, __off64_t, Cint) libpq
-    @c None _IO_free_backup_area (Ptr{_IO_FILE},) libpq
+    @c Void _IO_free_backup_area (Ptr{_IO_FILE},) libpq
     @c Cint remove (Ptr{Uint8},) libpq
     @c Cint rename (Ptr{Uint8}, Ptr{Uint8}) libpq
     @c Cint renameat (Cint, Ptr{Uint8}, Cint, Ptr{Uint8}) libpq
@@ -107,12 +107,12 @@ module libpq
     @c Ptr{FILE} fopen (Ptr{Uint8}, Ptr{Uint8}) libpq
     @c Ptr{FILE} freopen (Ptr{Uint8}, Ptr{Uint8}, Ptr{FILE}) libpq
     @c Ptr{FILE} fdopen (Cint, Ptr{Uint8}) libpq
-    @c Ptr{FILE} fmemopen (Ptr{None}, Cint, Ptr{Uint8}) libpq
+    @c Ptr{FILE} fmemopen (Ptr{Void}, Cint, Ptr{Uint8}) libpq
     @c Ptr{FILE} open_memstream (Ptr{Ptr{Uint8}}, Ptr{Cint}) libpq
-    @c None setbuf (Ptr{FILE}, Ptr{Uint8}) libpq
+    @c Void setbuf (Ptr{FILE}, Ptr{Uint8}) libpq
     @c Cint setvbuf (Ptr{FILE}, Ptr{Uint8}, Cint, Cint) libpq
-    @c None setbuffer (Ptr{FILE}, Ptr{Uint8}, Cint) libpq
-    @c None setlinebuf (Ptr{FILE},) libpq
+    @c Void setbuffer (Ptr{FILE}, Ptr{Uint8}, Cint) libpq
+    @c Void setlinebuf (Ptr{FILE},) libpq
     @c Cint fprintf (Ptr{FILE}, Ptr{Uint8}) libpq
     @c Cint printf (Ptr{Uint8},) libpq
     @c Cint sprintf (Ptr{Uint8}, Ptr{Uint8}) libpq
@@ -145,32 +145,32 @@ module libpq
     @c Cint fputs (Ptr{Uint8}, Ptr{FILE}) libpq
     @c Cint puts (Ptr{Uint8},) libpq
     @c Cint ungetc (Cint, Ptr{FILE}) libpq
-    @c Cint fread (Ptr{None}, Cint, Cint, Ptr{FILE}) libpq
-    @c Cint fwrite (Ptr{None}, Cint, Cint, Ptr{FILE}) libpq
-    @c Cint fread_unlocked (Ptr{None}, Cint, Cint, Ptr{FILE}) libpq
-    @c Cint fwrite_unlocked (Ptr{None}, Cint, Cint, Ptr{FILE}) libpq
+    @c Cint fread (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
+    @c Cint fwrite (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
+    @c Cint fread_unlocked (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
+    @c Cint fwrite_unlocked (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
     @c Cint fseek (Ptr{FILE}, Clong, Cint) libpq
     @c Clong ftell (Ptr{FILE},) libpq
-    @c None rewind (Ptr{FILE},) libpq
+    @c Void rewind (Ptr{FILE},) libpq
     # @c Cint fseeko (Ptr{FILE}, __off_t, Cint) libpq
     # @c __off_t ftello (Ptr{FILE},) libpq
     # @c Cint fgetpos (Ptr{FILE}, Ptr{fpos_t}) libpq
     # @c Cint fsetpos (Ptr{FILE}, Ptr{fpos_t}) libpq
-    @c None clearerr (Ptr{FILE},) libpq
+    @c Void clearerr (Ptr{FILE},) libpq
     @c Cint feof (Ptr{FILE},) libpq
     @c Cint ferror (Ptr{FILE},) libpq
-    @c None clearerr_unlocked (Ptr{FILE},) libpq
+    @c Void clearerr_unlocked (Ptr{FILE},) libpq
     @c Cint feof_unlocked (Ptr{FILE},) libpq
     @c Cint ferror_unlocked (Ptr{FILE},) libpq
-    @c None perror (Ptr{Uint8},) libpq
+    @c Void perror (Ptr{Uint8},) libpq
     @c Cint fileno (Ptr{FILE},) libpq
     @c Cint fileno_unlocked (Ptr{FILE},) libpq
     @c Ptr{FILE} popen (Ptr{Uint8}, Ptr{Uint8}) libpq
     @c Cint pclose (Ptr{FILE},) libpq
     @c Ptr{Uint8} ctermid (Ptr{Uint8},) libpq
-    @c None flockfile (Ptr{FILE},) libpq
+    @c Void flockfile (Ptr{FILE},) libpq
     @c Cint ftrylockfile (Ptr{FILE},) libpq
-    @c None funlockfile (Ptr{FILE},) libpq
+    @c Void funlockfile (Ptr{FILE},) libpq
     @c Ptr{PGconn} PQconnectStart (Ptr{Uint8},) libpq
     @c Ptr{PGconn} PQconnectStartParams (Ptr{Ptr{Uint8}}, Ptr{Ptr{Uint8}}, Cint) libpq
     @c PostgresPollingStatusType PQconnectPoll (Ptr{PGconn},) libpq
@@ -178,15 +178,15 @@ module libpq
     @c Ptr{PGconn} PQconnectdb (Ptr{Uint8},) libpq
     @c Ptr{PGconn} PQconnectdbParams (Ptr{Ptr{Uint8}}, Ptr{Ptr{Uint8}}, Cint) libpq
     @c Ptr{PGconn} PQsetdbLogin (Ptr{Uint8}, Ptr{Uint8}, Ptr{Uint8}, Ptr{Uint8}, Ptr{Uint8}, Ptr{Uint8}, Ptr{Uint8}) libpq
-    @c None PQfinish (Ptr{PGconn},) libpq
+    @c Void PQfinish (Ptr{PGconn},) libpq
     @c Ptr{PQconninfoOption} PQconndefaults () libpq
     @c Ptr{PQconninfoOption} PQconninfoParse (Ptr{Uint8}, Ptr{Ptr{Uint8}}) libpq
-    @c None PQconninfoFree (Ptr{PQconninfoOption},) libpq
+    @c Void PQconninfoFree (Ptr{PQconninfoOption},) libpq
     @c Cint PQresetStart (Ptr{PGconn},) libpq
     @c PostgresPollingStatusType PQresetPoll (Ptr{PGconn},) libpq
-    @c None PQreset (Ptr{PGconn},) libpq
+    @c Void PQreset (Ptr{PGconn},) libpq
     @c Ptr{PGcancel} PQgetCancel (Ptr{PGconn},) libpq
-    @c None PQfreeCancel (Ptr{PGcancel},) libpq
+    @c Void PQfreeCancel (Ptr{PGcancel},) libpq
     @c Cint PQcancel (Ptr{PGcancel}, Ptr{Uint8}, Cint) libpq
     @c Cint PQrequestCancel (Ptr{PGconn},) libpq
     @c Ptr{Uint8} PQdb (Ptr{PGconn},) libpq
@@ -208,14 +208,14 @@ module libpq
     @c Cint PQconnectionUsedPassword (Ptr{PGconn},) libpq
     @c Cint PQclientEncoding (Ptr{PGconn},) libpq
     @c Cint PQsetClientEncoding (Ptr{PGconn}, Ptr{Uint8}) libpq
-    @c Ptr{None} PQgetssl (Ptr{PGconn},) libpq
-    @c None PQinitSSL (Cint,) libpq
-    @c None PQinitOpenSSL (Cint, Cint) libpq
+    @c Ptr{Void} PQgetssl (Ptr{PGconn},) libpq
+    @c Void PQinitSSL (Cint,) libpq
+    @c Void PQinitOpenSSL (Cint, Cint) libpq
     @c PGVerbosity PQsetErrorVerbosity (Ptr{PGconn}, PGVerbosity) libpq
-    @c None PQtrace (Ptr{PGconn}, Ptr{FILE}) libpq
-    @c None PQuntrace (Ptr{PGconn},) libpq
-    @c PQnoticeReceiver PQsetNoticeReceiver (Ptr{PGconn}, PQnoticeReceiver, Ptr{None}) libpq
-    @c PQnoticeProcessor PQsetNoticeProcessor (Ptr{PGconn}, PQnoticeProcessor, Ptr{None}) libpq
+    @c Void PQtrace (Ptr{PGconn}, Ptr{FILE}) libpq
+    @c Void PQuntrace (Ptr{PGconn},) libpq
+    @c PQnoticeReceiver PQsetNoticeReceiver (Ptr{PGconn}, PQnoticeReceiver, Ptr{Void}) libpq
+    @c PQnoticeProcessor PQsetNoticeProcessor (Ptr{PGconn}, PQnoticeProcessor, Ptr{Void}) libpq
     @c pgthreadlock_t PQregisterThreadLock (pgthreadlock_t,) libpq
     @c Ptr{PGresult} PQexec (Ptr{PGconn}, Ptr{Uint8}) libpq
     @c Ptr{PGresult} PQexecParams (Ptr{PGconn}, Ptr{Uint8}, Cint, Ptr{Oid}, Ptr{Ptr{Uint8}}, Ptr{Cint}, Ptr{Cint}, Cint) libpq
@@ -273,12 +273,12 @@ module libpq
     @c Ptr{PGresult} PQdescribePortal (Ptr{PGconn}, Ptr{Uint8}) libpq
     @c Cint PQsendDescribePrepared (Ptr{PGconn}, Ptr{Uint8}) libpq
     @c Cint PQsendDescribePortal (Ptr{PGconn}, Ptr{Uint8}) libpq
-    @c None PQclear (Ptr{PGresult},) libpq
-    @c None PQfreemem (Ptr{None},) libpq
+    @c Void PQclear (Ptr{PGresult},) libpq
+    @c Void PQfreemem (Ptr{Void},) libpq
     @c Ptr{PGresult} PQmakeEmptyPGresult (Ptr{PGconn}, ExecStatusType) libpq
     @c Ptr{PGresult} PQcopyResult (Ptr{PGresult}, Cint) libpq
     @c Cint PQsetResultAttrs (Ptr{PGresult}, Cint, Ptr{PGresAttDesc}) libpq
-    @c Ptr{None} PQresultAlloc (Ptr{PGresult}, Cint) libpq
+    @c Ptr{Void} PQresultAlloc (Ptr{PGresult}, Cint) libpq
     @c Cint PQsetvalue (Ptr{PGresult}, Cint, Cint, Ptr{Uint8}, Cint) libpq
     @c Cint PQescapeStringConn (Ptr{PGconn}, Ptr{Uint8}, Ptr{Uint8}, Cint, Ptr{Cint}) libpq
     @c Ptr{Uint8} PQescapeLiteral (Ptr{PGconn}, Ptr{Uint8}, Cint) libpq
@@ -287,9 +287,9 @@ module libpq
     @c Ptr{Cuchar} PQunescapeBytea (Ptr{Cuchar}, Ptr{Cint}) libpq
     @c Cint PQescapeString (Ptr{Uint8}, Ptr{Uint8}, Cint) libpq
     @c Ptr{Cuchar} PQescapeBytea (Ptr{Cuchar}, Cint, Ptr{Cint}) libpq
-    @c None PQprint (Ptr{FILE}, Ptr{PGresult}, Ptr{PQprintOpt}) libpq
-    @c None PQdisplayTuples (Ptr{PGresult}, Ptr{FILE}, Cint, Ptr{Uint8}, Cint, Cint) libpq
-    @c None PQprintTuples (Ptr{PGresult}, Ptr{FILE}, Cint, Cint, Cint) libpq
+    @c Void PQprint (Ptr{FILE}, Ptr{PGresult}, Ptr{PQprintOpt}) libpq
+    @c Void PQdisplayTuples (Ptr{PGresult}, Ptr{FILE}, Cint, Ptr{Uint8}, Cint, Cint) libpq
+    @c Void PQprintTuples (Ptr{PGresult}, Ptr{FILE}, Cint, Cint, Cint) libpq
     @c Cint lo_open (Ptr{PGconn}, Oid, Cint) libpq
     @c Cint lo_close (Ptr{PGconn}, Cint) libpq
     @c Cint lo_read (Ptr{PGconn}, Cint, Ptr{Uint8}, Cint) libpq
