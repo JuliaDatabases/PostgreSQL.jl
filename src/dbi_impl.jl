@@ -1,3 +1,5 @@
+import Compat: Libc, @compat
+
 function Base.connect(::Type{Postgres},
                       host::String="",
                       user::String="",
@@ -102,7 +104,7 @@ hashsql(sql::String) = bytestring(string("__", hash(sql), "__"))
 
 function getparamtypes(result::Ptr{PGresult})
     nparams = PQnparams(result)
-    return [pgtype(OID{int(PQparamtype(result, i-1))}) for i = 1:nparams]
+    return @compat [pgtype(OID{Int(PQparamtype(result, i-1))}) for i = 1:nparams]
 end
 
 LIBC = @windows ? "msvcrt.dll" : :libc
@@ -126,7 +128,7 @@ end
 
 function cleanupparams(ptrs::Vector{Ptr{Uint8}})
     for ptr in ptrs
-        c_free(ptr)
+        Libc.free(ptr)
     end
 end
 

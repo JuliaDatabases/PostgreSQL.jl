@@ -1,6 +1,6 @@
 import DataArrays: NAtype
-import Compat: unsafe_convert
 import JSON
+import Compat: Libc, unsafe_convert, parse, @compat
 
 abstract AbstractPostgresType
 type PostgresType{Name} <: AbstractPostgresType end
@@ -45,7 +45,7 @@ typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
                               Type{PostgresType{:date}})
 
 function storestring!(ptr::Ptr{Uint8}, str::String)
-    ptr = convert(Ptr{Uint8}, c_realloc(ptr, sizeof(str)+1))
+    ptr = convert(Ptr{Uint8}, Libc.realloc(ptr, sizeof(str)+1))
     unsafe_copy!(ptr, unsafe_convert(Ptr{Uint8}, str), sizeof(str)+1)
     return ptr
 end
@@ -63,19 +63,19 @@ jldata(::Type{PostgresType{:date}}, ptr::Ptr{Uint8}) = bytestring(ptr)
 
 jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "f"
 
-jldata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}) = parseint(Int64, bytestring(ptr))
+jldata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}) = parse(Int64, bytestring(ptr))
 
-jldata(::Type{PostgresType{:int4}}, ptr::Ptr{Uint8}) = parseint(Int32, bytestring(ptr))
+jldata(::Type{PostgresType{:int4}}, ptr::Ptr{Uint8}) = parse(Int32, bytestring(ptr))
 
-jldata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}) = parseint(Int16, bytestring(ptr))
+jldata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}) = parse(Int16, bytestring(ptr))
 
-jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}) = parsefloat(Float64, bytestring(ptr))
+jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}) = parse(Float64, bytestring(ptr))
 
-jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}) = parsefloat(Float32, bytestring(ptr))
+jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}) = parse(Float32, bytestring(ptr))
 
 function jldata(::Type{PostgresType{:numeric}}, ptr::Ptr{Uint8})
     s = bytestring(ptr)
-    return search(s, '.') == 0 ? BigInt(s) : BigFloat(s)
+    return parse(search(s, '.') == 0 ? BigInt : BigFloat, s)
 end
 
 jldata(::PGStringTypes, ptr::Ptr{Uint8}) = bytestring(ptr)
@@ -168,7 +168,7 @@ end
 function PostgresResultHandle(result::Ptr{PGresult})
     status = PQresultStatus(result)
     if status == PGRES_TUPLES_OK || status == PGRES_SINGLE_TUPLE
-        oids = [OID{int(PQftype(result, col))} for col in 0:(PQnfields(result)-1)]
+        oids = @compat [OID{Int(PQftype(result, col))} for col in 0:(PQnfields(result)-1)]
         types = DataType[convert(PostgresType, x) for x in oids]
     else
         types = DataType[]
