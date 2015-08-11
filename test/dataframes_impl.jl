@@ -31,8 +31,8 @@ function test_dataframes()
     @test names(df) == names(df2)
     for col in names(df)
         @test all(isna(df[col]) == isna(df2[col]))
-        @test all([(isna(df[col][i]) && isna(df2[col][i])) || (df[col][i] == df2[col][i])
-            for i in 1:length(df[col])])
+        @test all(i -> (isna(df[col][i]) && isna(df2[col][i])) || (df[col][i] == df2[col][i]),
+            1:length(df[col]))
     end
 end
 
