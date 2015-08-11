@@ -1,11 +1,13 @@
+import Compat: Libc, @compat
+
 function test_numerics()
     PostgresType = PostgreSQL.PostgresType
-    values = {int16(4), int32(4), int64(4), float32(4), float64(4)}
+    values = @compat Any[Int16(4), Int32(4), Int64(4), Float32(4), Float64(4)]
 
-    types = {PostgresType{:int2}, PostgresType{:int4}, PostgresType{:int8},
-        PostgresType{:float4}, PostgresType{:float8}}
+    types = [PostgresType{:int2}, PostgresType{:int4}, PostgresType{:int8},
+        PostgresType{:float4}, PostgresType{:float8}]
 
-    p = convert(Ptr{Uint8}, c_malloc(8))
+    p = convert(Ptr{Uint8}, Libc.malloc(8))
     try
         for i = 1:length(values)
             p = PostgreSQL.storestring!(p, string(values[i]))
@@ -13,10 +15,10 @@ function test_numerics()
             testsameness(data, values[i])
         end
     finally
-        c_free(p)
+        Libc.free(p)
     end
 
-    p = c_malloc(8)
+    p = Libc.malloc(8)
     try
         for i = 1:length(values)
             p = PostgreSQL.pgdata(types[i], convert(Ptr{Uint8}, p), values[i])
@@ -24,21 +26,21 @@ function test_numerics()
             testsameness(data, values[i])
         end
     finally
-        c_free(p)
+        Libc.free(p)
     end
 end
 
 function test_strings()
     PGType = PostgreSQL.PostgresType
-    for typ in {PGType{:varchar}, PGType{:text}, PGType{:bpchar}}
-        for str in {"foobar", "fooba\u211D"}
+    for typ in [PGType{:varchar}, PGType{:text}, PGType{:bpchar}]
+        for str in Any["foobar", "fooba\u211D"]
             p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), str)
             try
                 data = PostgreSQL.jldata(typ, p)
                 @test typeof(str) == typeof(data)
                 @test str == data
             finally
-                c_free(p)
+                Libc.free(p)
             end
         end
     end
@@ -53,21 +55,21 @@ function test_bytea()
         @test typeof(bin) == typeof(data)
         @test bin == data
     finally
-        c_free(p)
+        Libc.free(p)
     end
 end
 
 function test_json()
     PGType = PostgreSQL.PostgresType
-    for typ in {PGType{:json}, PGType{:jsonb}}
-        dict1 = Dict{String,Any}({"bobr dobr" => [1, 2, 3]})
+    for typ in Any[PGType{:json}, PGType{:jsonb}]
+        dict1 = @compat Dict{String,Any}("bobr dobr" => [1, 2, 3])
         p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), dict1)
         try
             dict2 = PostgreSQL.jldata(typ, p)
             @test typeof(dict1) == typeof(dict2)
             @test dict1 == dict2
         finally
-            c_free(p)
+            Libc.free(p)
         end
     end
 end

@@ -1,5 +1,6 @@
 import DataFrames: DataFrameRow
 import DataArrays: NA
+import Compat: @compat, parse
 
 function test_dbi()
     @test Postgres <: DBI.DatabaseSystem
@@ -16,7 +17,7 @@ function test_dbi()
 
     iterresults = Vector{Any}[]
     for row in result
-        @test row[1] === int64(1)
+        @test row[1] === @compat Int64(1)
         @test_approx_eq row[2] 2.0
         @test typeof(row[2]) == Float64
         @test row[3] == "foo"
@@ -33,7 +34,7 @@ function test_dbi()
 
     dfresults = fetchdf(result)
 
-    dfrow = {x[2] for x in DataFrameRow(dfresults, 1)}
+    dfrow = Any[x[2] for x in DataFrameRow(dfresults, 1)]
     dfrow[5] = None
 
     @test dfrow == allresults[1]
@@ -55,11 +56,11 @@ function test_dbi()
 
     run(conn, create_str)
 
-    data = Vector{Any}[
-        {1, 4, "Spam spam eggs and spam", "red", (Uint8)[0x01, 0x02, 0x03, 0x04], None, BigInt(123), BigFloat("123.4567")},
-        {5, 8, "Michael Spam Palin", "blue", (Uint8)[], true, -3, BigFloat("-3.141592653")},
-        {3, 16, None, None, None, false, None, None},
-        {NA, 32, "Foo", "green", (Uint8)[0xfe, 0xdc, 0xba, 0x98, 0x76], true, 9876, BigFloat("9876.54321")}
+    data = Vector[
+        Any[1, 4, "Spam spam eggs and spam", "red", (Uint8)[0x01, 0x02, 0x03, 0x04], None, BigInt(123), parse(BigFloat, "123.4567")],
+        Any[5, 8, "Michael Spam Palin", "blue", (Uint8)[], true, -3, parse(BigFloat, "-3.141592653")],
+        Any[3, 16, None, None, None, false, None, None],
+        Any[NA, 32, "Foo", "green", (Uint8)[0xfe, 0xdc, 0xba, 0x98, 0x76], true, 9876, parse(BigFloat, "9876.54321")]
     ]
 
     insert_str = "INSERT INTO testdbi (combo, quant, name, color, bin, is_planet, num_int, num_float) " *
