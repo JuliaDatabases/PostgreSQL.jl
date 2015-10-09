@@ -1,7 +1,6 @@
 language: julia
 sudo: false
 os:
-  - osx
   - linux
 addons:
   postgresql: "9.3"
