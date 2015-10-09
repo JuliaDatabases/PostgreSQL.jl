@@ -7,7 +7,7 @@ function test_numerics()
     types = [PostgresType{:int2}, PostgresType{:int4}, PostgresType{:int8},
         PostgresType{:float4}, PostgresType{:float8}]
 
-    p = convert(Ptr{Uint8}, Libc.malloc(8))
+    p = convert(Ptr{UInt8}, Libc.malloc(8))
     try
         for i = 1:length(values)
             p = PostgreSQL.storestring!(p, string(values[i]))
@@ -21,7 +21,7 @@ function test_numerics()
     p = Libc.malloc(8)
     try
         for i = 1:length(values)
-            p = PostgreSQL.pgdata(types[i], convert(Ptr{Uint8}, p), values[i])
+            p = PostgreSQL.pgdata(types[i], convert(Ptr{UInt8}, p), values[i])
             data = PostgreSQL.jldata(types[i], p)
             testsameness(data, values[i])
         end
@@ -34,7 +34,7 @@ function test_strings()
     PGType = PostgreSQL.PostgresType
     for typ in [PGType{:varchar}, PGType{:text}, PGType{:bpchar}]
         for str in Any["foobar", "fooba\u211D"]
-            p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), str)
+            p = PostgreSQL.pgdata(typ, convert(Ptr{UInt8}, C_NULL), str)
             try
                 data = PostgreSQL.jldata(typ, p)
                 @test typeof(str) == typeof(data)
@@ -48,8 +48,8 @@ end
 
 function test_bytea()
     typ = PostgreSQL.PostgresType{:bytea}
-    bin = (Uint8)[0x01, 0x03, 0x42, 0xab, 0xff]
-    p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), bin)
+    bin = (UInt8)[0x01, 0x03, 0x42, 0xab, 0xff]
+    p = PostgreSQL.pgdata(typ, convert(Ptr{UInt8}, C_NULL), bin)
     try
         data = PostgreSQL.jldata(typ, p)
         @test typeof(bin) == typeof(data)
@@ -62,8 +62,8 @@ end
 function test_json()
     PGType = PostgreSQL.PostgresType
     for typ in Any[PGType{:json}, PGType{:jsonb}]
-        dict1 = @compat Dict{String,Any}("bobr dobr" => [1, 2, 3])
-        p = PostgreSQL.pgdata(typ, convert(Ptr{Uint8}, C_NULL), dict1)
+        dict1 = @compat Dict{AbstractString,Any}("bobr dobr" => [1, 2, 3])
+        p = PostgreSQL.pgdata(typ, convert(Ptr{UInt8}, C_NULL), dict1)
         try
             dict2 = PostgreSQL.jldata(typ, p)
             @test typeof(dict1) == typeof(dict2)

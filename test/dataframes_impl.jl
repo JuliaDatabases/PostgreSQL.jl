@@ -2,7 +2,7 @@ import DataFrames
 import DataArrays: isna
 
 function test_dataframes()
-    df = connect(Postgres, "localhost", "postgres") do conn
+    df = connect(Postgres, "localhost", "postgres", "", "julia_test") do conn
         stmt = prepare(conn, "SELECT 4::integer as foo, 4.0::DOUBLE PRECISION as bar, " *
             "NULL::integer as foobar;")
         result = execute(stmt)
@@ -14,7 +14,7 @@ function test_dataframes()
     @test df[:bar] == Float64[4.0]
     @test isna(df[:foobar][1])
 
-    df2 = connect(Postgres, "localhost", "postgres") do conn
+    df2 = connect(Postgres, "localhost", "postgres", "", "julia_test") do conn
         run(conn, """CREATE TEMPORARY TABLE dftable (foo integer, bar double precision,
             foobar integer);""")
         testdberror(conn, PostgreSQL.CONNECTION_OK)
