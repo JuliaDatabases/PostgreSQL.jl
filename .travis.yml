@@ -4,9 +4,7 @@ os:
   - osx
   - linux
 addons:
-  apt:
-    packages:
-      - postgresql
+  postgresql: "9.3"
 julia:
   - release
   - nightly
