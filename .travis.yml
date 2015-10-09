@@ -5,7 +5,7 @@ os:
 addons:
   postgresql: "9.3"
 julia:
-  - release
+  - 0.4
   - nightly
 notifications:
   email: false
