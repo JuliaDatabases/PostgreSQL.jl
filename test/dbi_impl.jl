@@ -5,7 +5,7 @@ import Compat: @compat, parse
 function test_dbi()
     @test Postgres <: DBI.DatabaseSystem
 
-    conn = connect(Postgres, "localhost", "postgres")
+    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
 
     @test isa(conn, DBI.DatabaseHandle)
     @test isdefined(conn, :status)
@@ -21,9 +21,9 @@ function test_dbi()
         @test_approx_eq row[2] 2.0
         @test typeof(row[2]) == Float64
         @test row[3] == "foo"
-        @test typeof(row[3]) <: String
+        @test typeof(row[3]) <: AbstractString
         @test row[4] == "foo       "
-        @test typeof(row[4]) <: String
+        @test typeof(row[4]) <: AbstractString
         @test row[5] === None
         push!(iterresults, row)
     end
@@ -57,10 +57,10 @@ function test_dbi()
     run(conn, create_str)
 
     data = Vector[
-        Any[1, 4, "Spam spam eggs and spam", "red", (Uint8)[0x01, 0x02, 0x03, 0x04], None, BigInt(123), parse(BigFloat, "123.4567")],
-        Any[5, 8, "Michael Spam Palin", "blue", (Uint8)[], true, -3, parse(BigFloat, "-3.141592653")],
+        Any[1, 4, "Spam spam eggs and spam", "red", (UInt8)[0x01, 0x02, 0x03, 0x04], None, BigInt(123), parse(BigFloat, "123.4567")],
+        Any[5, 8, "Michael Spam Palin", "blue", (UInt8)[], true, -3, parse(BigFloat, "-3.141592653")],
         Any[3, 16, None, None, None, false, None, None],
-        Any[NA, 32, "Foo", "green", (Uint8)[0xfe, 0xdc, 0xba, 0x98, 0x76], true, 9876, parse(BigFloat, "9876.54321")]
+        Any[NA, 32, "Foo", "green", (UInt8)[0xfe, 0xdc, 0xba, 0x98, 0x76], true, 9876, parse(BigFloat, "9876.54321")]
     ]
 
     insert_str = "INSERT INTO testdbi (combo, quant, name, color, bin, is_planet, num_int, num_float) " *
@@ -93,7 +93,7 @@ function test_dbi()
 
     disconnect(conn)
 
-    conn = connect(Postgres, "localhost", "postgres")
+    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
     run(conn, create_str)
     stmt = prepare(conn, insert_str)
     executemany(stmt, data)

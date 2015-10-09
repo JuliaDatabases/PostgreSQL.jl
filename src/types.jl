@@ -23,7 +23,7 @@ function newpgtype(pgtypename, oid, jltypes)
 end
 
 newpgtype(:bool, 16, (Bool,))
-newpgtype(:bytea, 17, (Vector{Uint8},))
+newpgtype(:bytea, 17, (Vector{UInt8},))
 newpgtype(:int8, 20, (Int64,))
 newpgtype(:int4, 23, (Int32,))
 newpgtype(:int2, 21, (Int16,))
@@ -34,114 +34,114 @@ newpgtype(:varchar, 1043, (ASCIIString,UTF8String))
 newpgtype(:text, 25, ())
 newpgtype(:numeric, 1700, (BigInt,BigFloat))
 newpgtype(:date, 1082, ())
-newpgtype(:unknown, 705, (UnionType,NAtype))
-newpgtype(:json, 114, (Dict{String,Any},))
-newpgtype(:jsonb, 3802, (Dict{String,Any},))
+newpgtype(:unknown, 705, (Union,NAtype))
+newpgtype(:json, 114, (Dict{AbstractString,Any},))
+newpgtype(:jsonb, 3802, (Dict{AbstractString,Any},))
 
 
-typealias PGStringTypes Union(Type{PostgresType{:bpchar}},
+typealias PGStringTypes Union{Type{PostgresType{:bpchar}},
                               Type{PostgresType{:varchar}},
                               Type{PostgresType{:text}},
-                              Type{PostgresType{:date}})
+                              Type{PostgresType{:date}}}
 
-function storestring!(ptr::Ptr{Uint8}, str::String)
-    ptr = convert(Ptr{Uint8}, Libc.realloc(ptr, sizeof(str)+1))
-    unsafe_copy!(ptr, unsafe_convert(Ptr{Uint8}, str), sizeof(str)+1)
+function storestring!(ptr::Ptr{UInt8}, str::AbstractString)
+    ptr = convert(Ptr{UInt8}, Libc.realloc(ptr, sizeof(str)+1))
+    unsafe_copy!(ptr, unsafe_convert(Ptr{UInt8}, str), sizeof(str)+1)
     return ptr
 end
 
 # In text mode, pq returns bytea as a text string "\xAABBCCDD...", for instance
-# Uint8[0x01, 0x23, 0x45] would come in as "\x012345"
-function decode_bytea_hex(s::String)
+# UInt8[0x01, 0x23, 0x45] would come in as "\x012345"
+function decode_bytea_hex(s::AbstractString)
     if length(s) < 2 || s[1] != '\\' || s[2] != 'x'
         error("Malformed bytea string: $s")
     end
     return hex2bytes(s[3:end])
 end
 
-jldata(::Type{PostgresType{:date}}, ptr::Ptr{Uint8}) = bytestring(ptr)
+jldata(::Type{PostgresType{:date}}, ptr::Ptr{UInt8}) = bytestring(ptr)
 
-jldata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}) = bytestring(ptr) != "f"
+jldata(::Type{PostgresType{:bool}}, ptr::Ptr{UInt8}) = bytestring(ptr) != "f"
 
-jldata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}) = parse(Int64, bytestring(ptr))
+jldata(::Type{PostgresType{:int8}}, ptr::Ptr{UInt8}) = parse(Int64, bytestring(ptr))
 
-jldata(::Type{PostgresType{:int4}}, ptr::Ptr{Uint8}) = parse(Int32, bytestring(ptr))
+jldata(::Type{PostgresType{:int4}}, ptr::Ptr{UInt8}) = parse(Int32, bytestring(ptr))
 
-jldata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}) = parse(Int16, bytestring(ptr))
+jldata(::Type{PostgresType{:int2}}, ptr::Ptr{UInt8}) = parse(Int16, bytestring(ptr))
 
-jldata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}) = parse(Float64, bytestring(ptr))
+jldata(::Type{PostgresType{:float8}}, ptr::Ptr{UInt8}) = parse(Float64, bytestring(ptr))
 
-jldata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}) = parse(Float32, bytestring(ptr))
+jldata(::Type{PostgresType{:float4}}, ptr::Ptr{UInt8}) = parse(Float32, bytestring(ptr))
 
-function jldata(::Type{PostgresType{:numeric}}, ptr::Ptr{Uint8})
+function jldata(::Type{PostgresType{:numeric}}, ptr::Ptr{UInt8})
     s = bytestring(ptr)
     return parse(search(s, '.') == 0 ? BigInt : BigFloat, s)
 end
 
-jldata(::PGStringTypes, ptr::Ptr{Uint8}) = bytestring(ptr)
+jldata(::PGStringTypes, ptr::Ptr{UInt8}) = bytestring(ptr)
 
-jldata(::Type{PostgresType{:bytea}}, ptr::Ptr{Uint8}) = bytestring(ptr) |> decode_bytea_hex
+jldata(::Type{PostgresType{:bytea}}, ptr::Ptr{UInt8}) = bytestring(ptr) |> decode_bytea_hex
 
-jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}) = None
+jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}) = None
 
-jldata(::Type{PostgresType{:json}}, ptr::Ptr{Uint8}) = JSON.parse(bytestring(ptr))
+jldata(::Type{PostgresType{:json}}, ptr::Ptr{UInt8}) = JSON.parse(bytestring(ptr))
 
-jldata(::Type{PostgresType{:jsonb}}, ptr::Ptr{Uint8}) = JSON.parse(bytestring(ptr))
+jldata(::Type{PostgresType{:jsonb}}, ptr::Ptr{UInt8}) = JSON.parse(bytestring(ptr))
 
-function pgdata(::Type{PostgresType{:bool}}, ptr::Ptr{Uint8}, data::Bool)
+function pgdata(::Type{PostgresType{:bool}}, ptr::Ptr{UInt8}, data::Bool)
     ptr = data ? storestring!(ptr, "TRUE") : storestring!(ptr, "FALSE")
 end
 
-function pgdata(::Type{PostgresType{:int8}}, ptr::Ptr{Uint8}, data::Number)
+function pgdata(::Type{PostgresType{:int8}}, ptr::Ptr{UInt8}, data::Number)
     ptr = storestring!(ptr, string(convert(Int64, data)))
 end
 
-function pgdata(::Type{PostgresType{:int4}}, ptr::Ptr{Uint8}, data::Number)
+function pgdata(::Type{PostgresType{:int4}}, ptr::Ptr{UInt8}, data::Number)
     ptr = storestring!(ptr, string(convert(Int32, data)))
 end
 
-function pgdata(::Type{PostgresType{:int2}}, ptr::Ptr{Uint8}, data::Number)
+function pgdata(::Type{PostgresType{:int2}}, ptr::Ptr{UInt8}, data::Number)
     ptr = storestring!(ptr, string(convert(Int16, data)))
 end
 
-function pgdata(::Type{PostgresType{:float8}}, ptr::Ptr{Uint8}, data::Number)
+function pgdata(::Type{PostgresType{:float8}}, ptr::Ptr{UInt8}, data::Number)
     ptr = storestring!(ptr, string(convert(Float64, data)))
 end
 
-function pgdata(::Type{PostgresType{:float4}}, ptr::Ptr{Uint8}, data::Number)
+function pgdata(::Type{PostgresType{:float4}}, ptr::Ptr{UInt8}, data::Number)
     ptr = storestring!(ptr, string(convert(Float32, data)))
 end
 
-function pgdata(::Type{PostgresType{:numeric}}, ptr::Ptr{Uint8}, data::Number)
+function pgdata(::Type{PostgresType{:numeric}}, ptr::Ptr{UInt8}, data::Number)
     ptr = storestring!(ptr, string(data))
 end
 
-function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::ByteString)
+function pgdata(::PGStringTypes, ptr::Ptr{UInt8}, data::ByteString)
     ptr = storestring!(ptr, data)
 end
 
-function pgdata(::PGStringTypes, ptr::Ptr{Uint8}, data::String)
+function pgdata(::PGStringTypes, ptr::Ptr{UInt8}, data::AbstractString)
     ptr = storestring!(ptr, bytestring(data))
 end
 
-function pgdata(::PostgresType{:date}, ptr::Ptr{Uint8}, data::String)
+function pgdata(::PostgresType{:date}, ptr::Ptr{UInt8}, data::AbstractString)
     ptr = storestring!(ptr, bytestring(data))
     ptr = Dates.DateFormat(ptr)
 end
 
-function pgdata(::Type{PostgresType{:bytea}}, ptr::Ptr{Uint8}, data::Vector{Uint8})
+function pgdata(::Type{PostgresType{:bytea}}, ptr::Ptr{UInt8}, data::Vector{UInt8})
     ptr = storestring!(ptr, bytestring("\\x", bytes2hex(data)))
 end
 
-function pgdata(::Type{PostgresType{:unknown}}, ptr::Ptr{Uint8}, data)
+function pgdata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}, data)
     ptr = storestring!(ptr, string(data))
 end
 
-function pgdata(::Type{PostgresType{:json}}, ptr::Ptr{Uint8}, data::Dict{String,Any})
+function pgdata(::Type{PostgresType{:json}}, ptr::Ptr{UInt8}, data::Dict{AbstractString,Any})
     ptr = storestring!(ptr, bytestring(JSON.json(data)))
 end
 
-function pgdata(::Type{PostgresType{:jsonb}}, ptr::Ptr{Uint8}, data::Dict{String,Any})
+function pgdata(::Type{PostgresType{:jsonb}}, ptr::Ptr{UInt8}, data::Dict{AbstractString,Any})
     ptr = storestring!(ptr, bytestring(JSON.json(data)))
 end
 
@@ -178,13 +178,13 @@ end
 
 type PostgresStatementHandle <: DBI.StatementHandle
     db::PostgresDatabaseHandle
-    stmt::String
+    stmt::AbstractString
     executed::Int
     paramtypes::Array{DataType}
     finished::Bool
     result::PostgresResultHandle
 
-    function PostgresStatementHandle(db::PostgresDatabaseHandle, stmt::String, executed=0, paramtypes::Array{DataType}=DataType[])
+    function PostgresStatementHandle(db::PostgresDatabaseHandle, stmt::AbstractString, executed=0, paramtypes::Array{DataType}=DataType[])
         new(db, stmt, executed, paramtypes, false)
     end
 end

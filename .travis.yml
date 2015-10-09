@@ -10,6 +10,8 @@ julia:
   - nightly
 notifications:
   email: false
+before_script:
+  - psql -c 'create database julia_test;' -U postgres
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
   - julia -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaDB/DBI.jl")'
