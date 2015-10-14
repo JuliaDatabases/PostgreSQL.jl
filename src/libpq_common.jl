@@ -50,7 +50,7 @@ const PGF_BINARY = 1
 # Skipping MacroDefinition: PQsetdb(M_PGHOST,M_PGPORT,M_PGOPT,M_PGTTY,M_DBNAME)PQsetdbLogin(M_PGHOST,M_PGPORT,M_PGOPT,M_PGTTY,M_DBNAME,NULL,NULL)
 # Skipping MacroDefinition: PQfreeNotify(ptr)PQfreemem(ptr)
 const PQnoPasswordSupplied = "fe_sendauth: no password supplied\n"
-typealias _IO_lock_t None
+typealias _IO_lock_t Union{}
 typealias va_list Cint
 # typealias off_t __off_t
 # typealias ssize_t __ssize_t
