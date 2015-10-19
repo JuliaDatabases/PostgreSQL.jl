@@ -1,7 +1,7 @@
 # Julia wrapper for header: /usr/include/postgresql/libpq-fe.h
 # Automatically generated using Clang.jl wrap_c, version 0.0.0
 
-module libpq
+module libpq_interface
            # types
     export PGconn,
            PGresult,

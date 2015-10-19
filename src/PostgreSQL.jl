@@ -3,8 +3,11 @@ module PostgreSQL
             executemany,
             escapeliteral
 
-    include("libpq.jl")
-    using .libpq
+    using BinDeps
+    @BinDeps.load_dependencies
+
+    include("libpq_interface.jl")
+    using .libpq_interface
     using DBI
     using DataFrames
     using DataArrays

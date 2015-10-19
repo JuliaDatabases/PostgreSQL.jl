@@ -3,3 +3,5 @@ DataFrames 0.6.6
 DataArrays
 Compat
 JSON
+BinDeps
+@osx Homebrew
