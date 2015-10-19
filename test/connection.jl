@@ -1,6 +1,6 @@
 function test_connection()
   println("Using libpq")
-    libpq = PostgreSQL.libpq
+    libpq = PostgreSQL.libpq_interface
 
     println("Checking basic connect")
     conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
