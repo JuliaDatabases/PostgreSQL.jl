@@ -85,7 +85,7 @@ jldata(::PGStringTypes, ptr::Ptr{UInt8}) = bytestring(ptr)
 
 jldata(::Type{PostgresType{:bytea}}, ptr::Ptr{UInt8}) = bytestring(ptr) |> decode_bytea_hex
 
-jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}) = None
+jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}) = Union{}
 
 jldata(::Type{PostgresType{:json}}, ptr::Ptr{UInt8}) = JSON.parse(bytestring(ptr))
 

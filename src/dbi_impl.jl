@@ -113,7 +113,7 @@ strlen(ptr::Ptr{UInt8}) = ccall((:strlen, LIBC), Csize_t, (Ptr{UInt8},), ptr)
 function getparams!(ptrs::Vector{Ptr{UInt8}}, params, types, sizes, lengths::Vector{Int32}, nulls)
     fill!(nulls, false)
     for i = 1:length(ptrs)
-        if params[i] === nothing || params[i] === NA || params[i] === None
+        if params[i] === nothing || params[i] === NA || params[i] === Union{}
             nulls[i] = true
         else
             ptrs[i] = pgdata(types[i], ptrs[i], params[i])
@@ -244,7 +244,7 @@ end
 
 # Assumes the row exists and has the structure described in PostgresResultHandle
 function unsafe_fetchrow(result::PostgresResultHandle, rownum::Integer)
-    return Any[PQgetisnull(result.ptr, rownum, i-1) == 1 ? None :
+    return Any[PQgetisnull(result.ptr, rownum, i-1) == 1 ? Union{} :
                jldata(datatype, PQgetvalue(result.ptr, rownum, i-1))
                for (i, datatype) in enumerate(result.types)]
 end
