@@ -116,3 +116,7 @@ typealias pqbool UInt8
 typealias pgthreadlock_t Ptr{Void}
 typealias PGconn Void
 typealias PGresult Void
+
+# custom constants
+const NO_EXPAND_DNAME = 0
+const EXPAND_DNAME = 0

@@ -14,4 +14,6 @@ module PostgreSQL
 
     include("types.jl")
     include("dbi_impl.jl")
+
+    include("dbapi_impl.jl")
 end
