@@ -1,5 +1,5 @@
 function test_connection()
-  println("Using libpq")
+    println("Using libpq")
     libpq = PostgreSQL.libpq_interface
 
     println("Checking basic connect")

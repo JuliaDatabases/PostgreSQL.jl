@@ -5,3 +5,4 @@ Compat
 JSON
 BinDeps
 @osx Homebrew
+ReadWriteLocks

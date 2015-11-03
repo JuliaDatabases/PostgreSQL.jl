@@ -1,23 +1,18 @@
 module Connections
 
-using ..PostgreSQLDBAPIBase
-import PostgreSQLDBAPIBase: pq
-
 import DataStructures: OrderedDict
+using ReadWriteLocks
 
-# this will catch at least a few errors in advance
-const VALID_DSN = r"^postgres(ql)?://"
+using ..PostgreSQLDBAPIBase
+import ..PostgreSQLDBAPIBase: pq, ConnectionParameters, checkmem
+import ..DSN: generate_dsn, is_valid_dsn
 
-immutable ConnectionParameters
-    keys::Vector{ByteString}
-    values::Vector{ByteString}
-    expand_dbname::Bool
-end
 
+# ConnectionParameters
 function ConnectionParameters(dsn::ByteString; kwargs...)
     params = ConnectionParameters(ByteString[], ByteString[], true)
 
-    if !ismatch(VALID_DSN, dsn)
+    if !is_valid_dsn(dsn)
         throw(PostgreSQLConnectionError("Invalid connection URI: $dsn"))
     end
 
@@ -34,17 +29,19 @@ end
 
 function ConnectionParameters(params::ConnectionParameters; kwargs...)
     for (k, v) in kwargs
-        params[bytestring(k)] = bytestring(v)
+        params[bytestring(string(k))] = bytestring(v)
     end
 
     return params
 end
 
-function setindex!(params::ConnectionParameters, value::ByteString, key::ByteString)
+function Base.setindex!(params::ConnectionParameters, value::ByteString, key::ByteString)
     push!(params.keys, key)
     push!(params.values, value)
 end
 
+
+# PostgreSQLConnection
 type PostgreSQLConnection <: DatabaseConnection{PostgreSQLInterface}
     ptr::Ptr{Void}
     params::ConnectionParameters
@@ -84,6 +81,15 @@ function Base.close(conn::PostgreSQLConnection)
     return nothing
 end
 
+function show(io::IO, connection::PostgreSQLConnection)
+    print(io,
+        typeof(connection),
+        "(params=$(generate_dsn(connection)), closed=$(!isopen(connection)))",
+    )
+end
+
+
+# PostgreSQLConnectionError
 immutable PostgreSQLConnectionError <: DatabaseError{PostgreSQLInterface}
     msg::ByteString
     reason::ByteString
@@ -110,7 +116,11 @@ end
 
 function async_connect(params::ConnectionParameters)
     conn = PostgreSQLConnection(
-        pq.PQconnectStart(params.keys, params.values, params.expand_dbname),
+        pq.PQconnectStartParams(
+            params.keys,
+            params.values,
+            params.expand_dbname ? pq.EXPAND_DBNAME : pq.NO_EXPAND_DBNAME,
+        ),
         params,
     )
     checkmem(conn.ptr)
@@ -166,21 +176,10 @@ The connection has failed, so throw an error.
 """
 function connection_failed(conn::PostgreSQLConnection)
     throw(PostgreSQLConnectionError(
-        "Failed to connect to $(conn.dsn)",
+        "Failed to connect to $(generate_dsn(conn.params))",
         bytestring(pq.PQerrorMessage(conn.ptr)),
     ))
 end
 
-function generate_dsn(params::ConnectionParameters)
-    dsn_index = params.expand_dbname ? findfirst(params.keys, "dbname") : 0
-
-    if dsn_index > 0
-        start_string = params.values[dsn_index]
-    else
-        start_string = "postgresql:///?"
-    end
-
-
-end
 
 end

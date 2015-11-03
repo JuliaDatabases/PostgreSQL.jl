@@ -12,6 +12,12 @@ pq = libpq_interface
 
 immutable PostgreSQLInterface <: DatabaseInterface end
 
+immutable ConnectionParameters
+    keys::Vector{ByteString}
+    values::Vector{ByteString}
+    expand_dbname::Bool
+end
+
 if !isdefined(:Mutex)
     typealias Mutex ReentrantLock
 

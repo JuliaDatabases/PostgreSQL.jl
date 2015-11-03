@@ -36,6 +36,8 @@ module libpq_interface
            PQTRANS_UNKNOWN,
            PGF_TEXT,
            PGF_BINARY,
+           EXPAND_DBNAME,
+           NO_EXPAND_DBNAME,
            # connection functions
            PQconnectdb,
            PQconnectdbParams,

@@ -118,5 +118,5 @@ typealias PGconn Void
 typealias PGresult Void
 
 # custom constants
-const NO_EXPAND_DNAME = 0
-const EXPAND_DNAME = 0
+const NO_EXPAND_DBNAME = 0
+const EXPAND_DBNAME = 1
