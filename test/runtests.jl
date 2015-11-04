@@ -2,6 +2,9 @@ using DBI
 using PostgreSQL
 using Base.Test
 
+using FactCheck
+using DBAPI
+
 include("testutils.jl")
 
 include("connection.jl")

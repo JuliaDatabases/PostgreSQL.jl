@@ -1,9 +1,10 @@
-function test_dbapi_connection()
+facts("Test dbapi connection") do
     conn = connect(PostgreSQL.PostgreSQLDBAPI.PostgreSQLInterface;
         host="localhost",
         user="postgres",
         dbname="julia_test",
     )
-end
 
-test_dbapi_connection()
+    @fact isa(conn, PostgreSQL.PostgreSQLDBAPI.Connections.PostgreSQLConnection) --> true
+    @fact isa(conn, DBAPI.DatabaseConnection) --> true
+end

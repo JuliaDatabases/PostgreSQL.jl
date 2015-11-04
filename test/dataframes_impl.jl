@@ -1,7 +1,7 @@
 import DataFrames
 import DataArrays: isna
 
-function test_dataframes()
+facts("Dataframes") do
     df = connect(Postgres, "localhost", "postgres", "", "julia_test") do conn
         stmt = prepare(conn, "SELECT 4::integer as foo, 4.0::DOUBLE PRECISION as bar, " *
             "NULL::integer as foobar;")
@@ -9,10 +9,10 @@ function test_dataframes()
         return fetchdf(result)
     end
 
-    @test isa(df, DataFrames.DataFrame)
-    @test df[:foo] == Int32[4]
-    @test df[:bar] == Float64[4.0]
-    @test isna(df[:foobar][1])
+    @fact isa(df, DataFrames.DataFrame) --> true
+    @fact df[:foo] --> Int32[4]
+    @fact df[:bar] --> Float64[4.0]
+    @fact isna(df[:foobar][1]) --> true
 
     df2 = connect(Postgres, "localhost", "postgres", "", "julia_test") do conn
         run(conn, """CREATE TEMPORARY TABLE dftable (foo integer, bar double precision,
@@ -28,12 +28,14 @@ function test_dataframes()
         return fetchdf(result)
     end
 
-    @test names(df) == names(df2)
+    @fact names(df) --> names(df2)
     for col in names(df)
-        @test all(isna(df[col]) == isna(df2[col]))
-        @test all(i -> (isna(df[col][i]) && isna(df2[col][i])) || (df[col][i] == df2[col][i]),
-            1:length(df[col]))
+        for (dfel, df2el) in zip(df[col], df2[col])
+            @fact isna(dfel) --> isna(df2el)
+
+            if !isna(dfel) && !isna(df2el)
+                @fact dfel --> df2el
+            end
+        end
     end
 end
-
-test_dataframes()

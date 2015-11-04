@@ -2,13 +2,13 @@ import DataFrames: DataFrameRow
 import DataArrays: NA
 import Compat: @compat, parse
 
-function test_dbi()
-    @test Postgres <: DBI.DatabaseSystem
+facts("DBI") do
+    @fact Postgres <: DBI.DatabaseSystem --> true
 
     conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
 
-    @test isa(conn, DBI.DatabaseHandle)
-    @test isdefined(conn, :status)
+    @fact isa(conn, DBI.DatabaseHandle) --> true
+    @fact isdefined(conn, :status) --> true
 
     stmt = prepare(conn, "SELECT 1::bigint, 2.0::double precision, 'foo'::character varying, " *
                          "'foo'::character(10), NULL;")
@@ -17,27 +17,27 @@ function test_dbi()
 
     iterresults = Vector{Any}[]
     for row in result
-        @test row[1] === @compat Int64(1)
-        @test_approx_eq row[2] 2.0
-        @test typeof(row[2]) == Float64
-        @test row[3] == "foo"
-        @test typeof(row[3]) <: AbstractString
-        @test row[4] == "foo       "
-        @test typeof(row[4]) <: AbstractString
-        @test row[5] === Union{}
+        @fact row[1] --> exactly(Int64(1))
+        @fact row[2] --> roughly(2.0)
+        @fact typeof(row[2]) --> Float64
+        @fact row[3] --> "foo"
+        @fact typeof(row[3]) <: AbstractString --> true
+        @fact row[4] --> "foo       "
+        @fact typeof(row[4]) <: AbstractString --> true
+        @fact row[5] --> exactly(Union{})
         push!(iterresults, row)
     end
 
     allresults = fetchall(result)
 
-    @test iterresults == allresults
+    @fact iterresults --> allresults
 
     dfresults = fetchdf(result)
 
     dfrow = Any[x[2] for x in DataFrameRow(dfresults, 1)]
     dfrow[5] = Union{}
 
-    @test dfrow == allresults[1]
+    @fact dfrow --> allresults[1]
 
     finish(stmt)
 
@@ -77,17 +77,17 @@ function test_dbi()
     result = execute(stmt)
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     rows = fetchall(result)
-    @test rows[1] == data[1]
-    @test rows[2] == data[2]
-    @test rows[3] == data[3]
-    @test rows[4][1] == Union{}
-    @test rows[4][2] == data[4][2]
-    @test rows[4][3] == data[4][3]
-    @test rows[4][4] == data[4][4]
-    @test rows[4][5] == data[4][5]
-    @test rows[4][6] == data[4][6]
-    @test rows[4][7] == data[4][7]
-    @test rows[4][8] == data[4][8]
+    @fact rows[1] --> data[1]
+    @fact rows[2] --> data[2]
+    @fact rows[3] --> data[3]
+    @fact rows[4][1] --> Union{}
+    @fact rows[4][2] --> data[4][2]
+    @fact rows[4][3] --> data[4][3]
+    @fact rows[4][4] --> data[4][4]
+    @fact rows[4][5] --> data[4][5]
+    @fact rows[4][6] --> data[4][6]
+    @fact rows[4][7] --> data[4][7]
+    @fact rows[4][8] --> data[4][8]
 
     finish(stmt)
 
@@ -104,27 +104,25 @@ function test_dbi()
     result = execute(stmt)
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     rows = fetchall(result)
-    @test rows[1] == data[1]
-    @test rows[2] == data[2]
-    @test rows[3] == data[3]
-    @test rows[4][1] == Union{}
-    @test rows[4][2] == data[4][2]
-    @test rows[4][3] == data[4][3]
-    @test rows[4][4] == data[4][4]
-    @test rows[4][5] == data[4][5]
-    @test rows[4][6] == data[4][6]
-    @test rows[4][7] == data[4][7]
-    @test rows[4][8] == data[4][8]
+    @fact rows[1] --> data[1]
+    @fact rows[2] --> data[2]
+    @fact rows[3] --> data[3]
+    @fact rows[4][1] --> Union{}
+    @fact rows[4][2] --> data[4][2]
+    @fact rows[4][3] --> data[4][3]
+    @fact rows[4][4] --> data[4][4]
+    @fact rows[4][5] --> data[4][5]
+    @fact rows[4][6] --> data[4][6]
+    @fact rows[4][7] --> data[4][7]
+    @fact rows[4][8] --> data[4][8]
 
     finish(stmt)
 
-    @test escapeliteral(conn, 3) == 3
-    @test escapeliteral(conn, 3.3) == 3.3
-    @test escapeliteral(conn, "foo") == "'foo'"
-    @test escapeliteral(conn, "fo\u2202") == "'fo\u2202'"
-    @test escapeliteral(conn, SubString("myfood", 3, 5)) == "'foo'"
+    @fact escapeliteral(conn, 3) --> 3
+    @fact escapeliteral(conn, 3.3) --> 3.3
+    @fact escapeliteral(conn, "foo") --> "'foo'"
+    @fact escapeliteral(conn, "fo\u2202") --> "'fo\u2202'"
+    @fact escapeliteral(conn, SubString("myfood", 3, 5)) --> "'foo'"
 
     disconnect(conn)
 end
-
-test_dbi()
