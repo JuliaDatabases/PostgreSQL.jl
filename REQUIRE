@@ -7,3 +7,4 @@ BinDeps
 @osx Homebrew
 ReadWriteLocks
 DBAPI
+DataStructures
