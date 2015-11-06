@@ -25,12 +25,6 @@ immutable SimpleConnectionParameters <: ConnectionParameters
     values::Vector{ByteString}
 end
 
-if !isdefined(:Mutex)
-    typealias Mutex ReentrantLock
-
-    lock!(x::Mutex) = lock(x)
-    unlock!(x::Mutex) = unlock(x)
-end
 
 """
 libpq will return a null pointer when it can't allocate memory. Here we check

@@ -65,26 +65,27 @@ type PostgreSQLConnection <: DatabaseConnection{PostgreSQLInterface}
     ptr::Ptr{Void}
     params::ConnectionParameters
     finished::Bool
-    lock::ReentrantLock
+    lock::ReadWriteLock
 
     function PostgreSQLConnection(
         ptr::Ptr{Void},
         params::ConnectionParameters,
         finished::Bool,
     )
-        conn = new(ptr, params, finished, ReentrantLock())
+        conn = new(ptr, params, finished, ReadWriteLock())
         finalizer(conn, finish)
         return conn
     end
 end
 
 function finish(conn::PostgreSQLConnection)
-    lock(conn.lock)
+    wlock = write_lock(conn.lock)
+    lock!(wlock)
     (conn_ptr, conn.ptr) = (conn.ptr, C_NULL)
     if !conn.finished
         pq.PQfinish(conn_ptr)
     end
-    unlock(conn.lock)
+    unlock!(wlock)
 end
 
 function PostgreSQLConnection(ptr::Ptr{Void}, params::ConnectionParameters)
@@ -92,7 +93,12 @@ function PostgreSQLConnection(ptr::Ptr{Void}, params::ConnectionParameters)
 end
 
 function Base.isopen(conn::PostgreSQLConnection)
-    return !finished && pq.PQstatus(conn.ptr) == pq.CONNECTION_OK
+    rlock = read_lock(conn.lock)
+    lock!(rlock)
+    conn_is_open = !finished && pq.PQstatus(conn.ptr) == pq.CONNECTION_OK
+    unlock!(rlock)
+
+    return conn_is_open
 end
 
 function Base.close(conn::PostgreSQLConnection)
@@ -134,6 +140,8 @@ function async_connect(args...; kwargs...)
 end
 
 function async_connect(params::ConnectionParameters)
+    # we don't have to worry about locking in here as only we have access to the new
+    # connection
     conn = PostgreSQLConnection(
         pq.PQconnectStartParams(
             params.keys,
@@ -196,8 +204,21 @@ The connection has failed, so throw an error.
 function connection_failed(conn::PostgreSQLConnection)
     throw(PostgreSQLConnectionError(
         "Failed to connect to $(generate_dsn(conn.params))",
-        bytestring(pq.PQerrorMessage(conn.ptr)),
+        error_message(conn),
     ))
+end
+
+function error_message(conn::PostgreSQLConnection)
+    rlock = read_lock(conn.lock)
+    lock!(rlock)
+    if !conn.finished
+        message = bytestring(pq.PQerrorMessage(conn.ptr))
+    else
+        message = "Unknown error: PostgreSQL connection has been destroyed.\n"
+    end
+    unlock!(rlock)
+
+    return message
 end
 
 
