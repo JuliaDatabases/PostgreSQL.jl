@@ -4,7 +4,8 @@ export is_valid_dsn, generate_dsn
 
 import ..PostgreSQLDBAPIBase: ConnectionParameters,
     SimpleConnectionParameters,
-    DSNConnectionParameters
+    DSNConnectionParameters,
+    PostgreSQLConnectionError
 
 # this will catch at least a few errors in advance
 const VALID_DSN = r"^postgres(ql)?://"

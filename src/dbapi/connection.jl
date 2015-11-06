@@ -8,7 +8,8 @@ import ..PostgreSQLDBAPIBase: pq,
     ConnectionParameters,
     DSNConnectionParameters,
     SimpleConnectionParameters,
-    checkmem
+    checkmem,
+    PostgreSQLConnectionError
 import ..DSN: generate_dsn, is_valid_dsn
 
 
@@ -113,16 +114,6 @@ function show(io::IO, connection::PostgreSQLConnection)
     )
 end
 
-
-# PostgreSQLConnectionError
-immutable PostgreSQLConnectionError <: DatabaseError{PostgreSQLInterface}
-    msg::ByteString
-    reason::ByteString
-end
-
-function Base.showerror(io::IO, err::PostgreSQLConnectionError)
-    print(io, err.reason, err.msg)
-end
 
 type PostgreSQLConnectionFuture
     connection::PostgreSQLConnection

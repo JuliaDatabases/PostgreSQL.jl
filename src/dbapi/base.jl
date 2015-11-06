@@ -25,6 +25,30 @@ immutable SimpleConnectionParameters <: ConnectionParameters
     values::Vector{ByteString}
 end
 
+# PostgreSQLConnectionError
+immutable PostgreSQLConnectionError <: DatabaseError{PostgreSQLInterface}
+    msg::ByteString
+    reason::ByteString
+
+    function PostgreSQLConnectionError(msg::ByteString)
+        return new(msg)
+    end
+end
+
+function PostgreSQLConnectionError(msg::ByteString, reason::ByteString)
+    err = PostgreSQLConnectionError(msg)
+    err.reason = reason
+    return err
+end
+
+
+function Base.showerror(io::IO, err::PostgreSQLConnectionError)
+    if isdefined(err, :reason)
+        print(io, err.reason)
+    end
+    print(io, err.msg)
+end
+
 
 """
 libpq will return a null pointer when it can't allocate memory. Here we check
