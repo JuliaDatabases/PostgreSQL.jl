@@ -6,3 +6,4 @@ JSON
 BinDeps
 @osx Homebrew
 ReadWriteLocks
+DBAPI
