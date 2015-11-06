@@ -32,17 +32,20 @@ function generate_dsn(params::DSNConnectionParameters)
     end
 
     if num_slashes < 2
-        throw(PostgreSQLConnectionError("Invalid connection URI: $dsn"))
+        throw(
+            PostgreSQLConnectionError("Invalid connection URI: \"$dsn_param\"")
+        )
     end
 
     has_params_already = findnext(dsn_param, '=', i) > 0
-    end_index = endof(dsn_param)
 
     print(dsn, dsn_param)
 
     if nparams > 0
         if has_params_already
-            print(dsn, '&')
+            if last(dsn_param) != '&'
+                print(dsn, '&')
+            end
         else
             # we have to make sure the first part of the dsn is properly terminated
             if num_slashes == 2
@@ -53,7 +56,7 @@ function generate_dsn(params::DSNConnectionParameters)
         end
 
         # leave out the dsn in dbname (always first parameter)
-        for i = 2:(nparams - 1)
+        for i = 2:nparams
             print_param(dsn, params, i)
 
             print(dsn, '&')
