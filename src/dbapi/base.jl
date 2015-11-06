@@ -12,10 +12,17 @@ pq = libpq_interface
 
 immutable PostgreSQLInterface <: DatabaseInterface end
 
-immutable ConnectionParameters
+abstract ConnectionParameters
+
+immutable DSNConnectionParameters <: ConnectionParameters
     keys::Vector{ByteString}
     values::Vector{ByteString}
-    expand_dbname::Bool
+    dsn::ByteString
+end
+
+immutable SimpleConnectionParameters <: ConnectionParameters
+    keys::Vector{ByteString}
+    values::Vector{ByteString}
 end
 
 if !isdefined(:Mutex)

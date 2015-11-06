@@ -4,17 +4,21 @@ import DataStructures: OrderedDict
 using ReadWriteLocks
 
 using ..PostgreSQLDBAPIBase
-import ..PostgreSQLDBAPIBase: pq, ConnectionParameters, checkmem
+import ..PostgreSQLDBAPIBase: pq,
+    ConnectionParameters,
+    DSNConnectionParameters,
+    SimpleConnectionParameters,
+    checkmem
 import ..DSN: generate_dsn, is_valid_dsn
 
 
 # ConnectionParameters
 function ConnectionParameters(dsn::ByteString; kwargs...)
-    params = ConnectionParameters(ByteString[], ByteString[], true)
-
     if !is_valid_dsn(dsn)
         throw(PostgreSQLConnectionError("Invalid connection URI: $dsn"))
     end
+
+    params = DSNConnectionParameters(ByteString[], ByteString[], dsn)
 
     params["dbname"] = dsn
 
@@ -22,7 +26,7 @@ function ConnectionParameters(dsn::ByteString; kwargs...)
 end
 
 function ConnectionParameters(; kwargs...)
-    params = ConnectionParameters(ByteString[], ByteString[], false)
+    params = SimpleConnectionParameters(ByteString[], ByteString[])
 
     return ConnectionParameters(params; kwargs...)
 end
@@ -35,9 +39,24 @@ function ConnectionParameters(params::ConnectionParameters; kwargs...)
     return params
 end
 
+expand_dbname(::DSNConnectionParameters) = true
+expand_dbname(::SimpleConnectionParameters) = false
+
+Base.length(params::ConnectionParameters) = length(params.keys)
+
 function Base.setindex!(params::ConnectionParameters, value::ByteString, key::ByteString)
     push!(params.keys, key)
     push!(params.values, value)
+end
+
+function Base.getindex(params::ConnectionParameters, key::ByteString)
+    ind = findlast(params.keys, key)
+
+    if ind == 0
+        throw(KeyError(key))
+    else
+        return params.values[ind]
+    end
 end
 
 
@@ -119,7 +138,7 @@ function async_connect(params::ConnectionParameters)
         pq.PQconnectStartParams(
             params.keys,
             params.values,
-            params.expand_dbname ? pq.EXPAND_DBNAME : pq.NO_EXPAND_DBNAME,
+            expand_dbname(params) ? pq.EXPAND_DBNAME : pq.NO_EXPAND_DBNAME,
         ),
         params,
     )
