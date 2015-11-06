@@ -12,7 +12,7 @@ notifications:
 before_script:
   - psql -c 'create database julia_test;' -U postgres
 script:
-  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - git fetch --unshallow
   - julia -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaDB/DBI.jl")'
   - julia -e 'using PostgreSQL; @assert isdefined(:PostgreSQL); @assert typeof(PostgreSQL) === Module'
   - julia -e 'Pkg.test("PostgreSQL"; coverage=true)'
