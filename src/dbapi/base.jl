@@ -15,20 +15,20 @@ immutable PostgreSQLInterface <: DatabaseInterface end
 abstract ConnectionParameters
 
 immutable DSNConnectionParameters <: ConnectionParameters
-    keys::Vector{ByteString}
-    values::Vector{ByteString}
-    dsn::ByteString
+    keys::Vector{UTF8String}
+    values::Vector{UTF8String}
+    dsn::UTF8String
 end
 
 immutable SimpleConnectionParameters <: ConnectionParameters
-    keys::Vector{ByteString}
-    values::Vector{ByteString}
+    keys::Vector{UTF8String}
+    values::Vector{UTF8String}
 end
 
 # PostgreSQLConnectionError
 immutable PostgreSQLConnectionError <: DatabaseError{PostgreSQLInterface}
-    msg::ByteString
-    reason::ByteString
+    msg::UTF8String
+    reason::UTF8String
 
     function PostgreSQLConnectionError(msg::ByteString)
         return new(msg)

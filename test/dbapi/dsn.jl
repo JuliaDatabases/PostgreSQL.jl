@@ -86,7 +86,7 @@ facts("DSN") do
                 dsn = "postgresql://postgres@localhost:5432/postgres"
                 params = ConnectionParameters(dsn; host="localhost")
                 generated_dsn = generate_dsn(params)
-                @fact generated_dsn --> "$(dsn)host=localhost"
+                @fact generated_dsn --> "$(dsn)?host=localhost"
             end
 
             context("Trailing &") do

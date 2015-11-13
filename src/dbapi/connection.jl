@@ -1,6 +1,8 @@
 module Connections
 
-import DataStructures: OrderedDict
+export PostgreSQLConnection,
+    error_message
+
 using ReadWriteLocks
 
 using ..PostgreSQLDBAPIBase
@@ -19,7 +21,7 @@ function ConnectionParameters(dsn::ByteString; kwargs...)
         throw(PostgreSQLConnectionError("Invalid connection URI: $dsn"))
     end
 
-    params = DSNConnectionParameters(ByteString[], ByteString[], dsn)
+    params = DSNConnectionParameters(UTF8String[], UTF8String[], dsn)
 
     params["dbname"] = dsn
 
@@ -27,7 +29,7 @@ function ConnectionParameters(dsn::ByteString; kwargs...)
 end
 
 function ConnectionParameters(; kwargs...)
-    params = SimpleConnectionParameters(ByteString[], ByteString[])
+    params = SimpleConnectionParameters(UTF8String[], UTF8String[])
 
     return ConnectionParameters(params; kwargs...)
 end
@@ -107,7 +109,7 @@ function Base.close(conn::PostgreSQLConnection)
     return nothing
 end
 
-function show(io::IO, connection::PostgreSQLConnection)
+function Base.show(io::IO, connection::PostgreSQLConnection)
     print(io,
         typeof(connection),
         "(params=$(generate_dsn(connection)), closed=$(!isopen(connection)))",
