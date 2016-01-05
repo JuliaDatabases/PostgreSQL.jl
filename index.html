@@ -1,0 +1,117 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <title>PostgreSQL.jl by JuliaDB</title>
+
+    <link rel="stylesheet" href="stylesheets/styles.css">
+    <link rel="stylesheet" href="stylesheets/github-light.css">
+    <meta name="viewport" content="width=device-width">
+    <!--[if lt IE 9]>
+    <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="wrapper">
+      <header>
+        <h1>PostgreSQL.jl</h1>
+        <p>PostgreSQL DBI driver</p>
+
+        <p class="view"><a href="https://github.com/JuliaDB/PostgreSQL.jl">View the Project on GitHub <small>JuliaDB/PostgreSQL.jl</small></a></p>
+
+
+        <ul>
+          <li><a href="https://github.com/JuliaDB/PostgreSQL.jl/zipball/master">Download <strong>ZIP File</strong></a></li>
+          <li><a href="https://github.com/JuliaDB/PostgreSQL.jl/tarball/master">Download <strong>TAR Ball</strong></a></li>
+          <li><a href="https://github.com/JuliaDB/PostgreSQL.jl">View On <strong>GitHub</strong></a></li>
+        </ul>
+      </header>
+      <section>
+        <h1>
+<a id="postgresqljl" class="anchor" href="#postgresqljl" aria-hidden="true"><span class="octicon octicon-link"></span></a>PostgreSQL.jl</h1>
+
+<p><a href="https://travis-ci.org/JuliaDB/PostgreSQL.jl"><img src="https://travis-ci.org/JuliaDB/PostgreSQL.jl.svg" alt="Build Status"></a>  <a href="https://coveralls.io/r/JuliaDB/PostgreSQL.jl"><img src="https://img.shields.io/coveralls/JuliaDB/PostgreSQL.jl.svg" alt="Coverage Status"></a>  <a href="http://codecov.io/github/JuliaDB/PostgreSQL.jl"><img src="http://codecov.io/github/JuliaDB/PostgreSQL.jl/coverage.svg" alt="codecov.io"></a></p>
+
+<p>An interface to PostgreSQL from Julia. Uses libpq (the C PostgreSQL API) and obeys the <a href="https://github.com/JuliaDB/DBI.jl">DBI.jl protocol</a>.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span class="octicon octicon-link"></span></a>Usage</h2>
+
+<div class="highlight highlight-source-julia"><pre><span class="pl-k">using</span> DBI
+<span class="pl-k">using</span> PostgreSQL
+
+conn <span class="pl-k">=</span> <span class="pl-c1">connect</span>(Postgres, <span class="pl-s"><span class="pl-pds">"</span>localhost<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>username<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>password<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>dbname<span class="pl-pds">"</span></span>, <span class="pl-c1">5432</span>)
+
+stmt <span class="pl-k">=</span> <span class="pl-c1">prepare</span>(conn, <span class="pl-s"><span class="pl-pds">"</span>SELECT 1::bigint, 2.0::double precision, 'foo'::character varying, <span class="pl-pds">"</span></span> <span class="pl-k">*</span>
+                     <span class="pl-s"><span class="pl-pds">"</span>'foo'::character(10);<span class="pl-pds">"</span></span>)
+result <span class="pl-k">=</span> <span class="pl-c1">execute</span>(stmt)
+<span class="pl-k">for</span> row <span class="pl-k">in</span> result
+    <span class="pl-c"># code</span>
+<span class="pl-k">end</span>
+
+<span class="pl-c1">finish</span>(stmt)
+
+<span class="pl-c1">disconnect</span>(conn)</pre></div>
+
+<h3>
+<a id="block-syntax" class="anchor" href="#block-syntax" aria-hidden="true"><span class="octicon octicon-link"></span></a>Block Syntax</h3>
+
+<div class="highlight highlight-source-julia"><pre><span class="pl-k">using</span> DBI
+<span class="pl-k">using</span> PostgreSQL
+
+<span class="pl-c1">connect</span>(Postgres, <span class="pl-s"><span class="pl-pds">"</span>localhost<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>username<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>password<span class="pl-pds">"</span></span>, <span class="pl-s"><span class="pl-pds">"</span>dbname<span class="pl-pds">"</span></span>, <span class="pl-c1">5432</span>) <span class="pl-k">do</span> conn
+    <span class="pl-c">#code</span>
+<span class="pl-k">end</span></pre></div>
+
+<h2>
+<a id="requirements" class="anchor" href="#requirements" aria-hidden="true"><span class="octicon octicon-link"></span></a>Requirements</h2>
+
+<ul>
+<li><a href="https://github.com/JuliaDB/DBI.jl">DBI.jl</a></li>
+<li>
+<a href="https://github.com/JuliaStats/DataFrames.jl">DataFrames.jl</a> &gt;= v0.5.7</li>
+<li>
+<a href="https://github.com/JuliaStats/DataArrays.jl">DataArrays.jl</a> &gt;= v0.1.2</li>
+<li>libpq shared library (comes with a standard PostgreSQL client installation)</li>
+<li>julia 0.3</li>
+</ul>
+
+<p>Tests require a local PostgreSQL server with a postgres user/database (installed by default with PostgreSQL server installations) with trusted authentication from localhost.</p>
+
+<h2>
+<a id="systems" class="anchor" href="#systems" aria-hidden="true"><span class="octicon octicon-link"></span></a>Systems</h2>
+
+<ul>
+<li>Tested on Funtoo Linux and Windows 8</li>
+<li>Should work on other systems provided libpq is avaiable (please file an issue if this is not the case)</li>
+</ul>
+
+<h2>
+<a id="todo-soon" class="anchor" href="#todo-soon" aria-hidden="true"><span class="octicon octicon-link"></span></a>TODO (soon)</h2>
+
+<ul>
+<li>Implement more default PostgreSQL type handling</li>
+<li>Test type handling overrides</li>
+<li>More comprehensive error handling and tests</li>
+<li>Support for COPY</li>
+</ul>
+
+<h2>
+<a id="todo-not-soon" class="anchor" href="#todo-not-soon" aria-hidden="true"><span class="octicon octicon-link"></span></a>TODO (not soon)</h2>
+
+<ul>
+<li>Asynchronous connection support</li>
+<li>Asynchronous Julia for handling asynchronous connections</li>
+<li>Testing and compatibility with multiple versions of PostgreSQL and libpq</li>
+</ul>
+      </section>
+      <footer>
+        <p>This project is maintained by <a href="https://github.com/JuliaDB">JuliaDB</a></p>
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></small></p>
+      </footer>
+    </div>
+    <script src="javascripts/scale.fix.js"></script>
+    
+  </body>
+</html>
