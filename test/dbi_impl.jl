@@ -24,7 +24,7 @@ function test_dbi()
         @test typeof(row[3]) <: AbstractString
         @test row[4] == "foo       "
         @test typeof(row[4]) <: AbstractString
-        @test row[5] === None
+        @test row[5] === Union{}
         push!(iterresults, row)
     end
 
@@ -35,7 +35,7 @@ function test_dbi()
     dfresults = fetchdf(result)
 
     dfrow = Any[x[2] for x in DataFrameRow(dfresults, 1)]
-    dfrow[5] = None
+    dfrow[5] = Union{}
 
     @test dfrow == allresults[1]
 
@@ -57,9 +57,9 @@ function test_dbi()
     run(conn, create_str)
 
     data = Vector[
-        Any[1, 4, "Spam spam eggs and spam", "red", (UInt8)[0x01, 0x02, 0x03, 0x04], None, BigInt(123), parse(BigFloat, "123.4567")],
+        Any[1, 4, "Spam spam eggs and spam", "red", (UInt8)[0x01, 0x02, 0x03, 0x04], Union{}, BigInt(123), parse(BigFloat, "123.4567")],
         Any[5, 8, "Michael Spam Palin", "blue", (UInt8)[], true, -3, parse(BigFloat, "-3.141592653")],
-        Any[3, 16, None, None, None, false, None, None],
+        Any[3, 16, Union{}, Union{}, Union{}, false, Union{}, Union{}],
         Any[NA, 32, "Foo", "green", (UInt8)[0xfe, 0xdc, 0xba, 0x98, 0x76], true, 9876, parse(BigFloat, "9876.54321")]
     ]
 
@@ -80,7 +80,7 @@ function test_dbi()
     @test rows[1] == data[1]
     @test rows[2] == data[2]
     @test rows[3] == data[3]
-    @test rows[4][1] == None
+    @test rows[4][1] == Union{}
     @test rows[4][2] == data[4][2]
     @test rows[4][3] == data[4][3]
     @test rows[4][4] == data[4][4]
@@ -107,7 +107,7 @@ function test_dbi()
     @test rows[1] == data[1]
     @test rows[2] == data[2]
     @test rows[3] == data[3]
-    @test rows[4][1] == None
+    @test rows[4][1] == Union{}
     @test rows[4][2] == data[4][2]
     @test rows[4][3] == data[4][3]
     @test rows[4][4] == data[4][4]
@@ -123,6 +123,96 @@ function test_dbi()
     @test escapeliteral(conn, "foo") == "'foo'"
     @test escapeliteral(conn, "fo\u2202") == "'fo\u2202'"
     @test escapeliteral(conn, SubString("myfood", 3, 5)) == "'foo'"
+
+    disconnect(conn)
+
+    # Test arrays
+    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
+    create_str = """CREATE TEMPORARY TABLE testarrays(
+      intdata INTEGER,
+      floatdata DOUBLE PRECISION,
+      textdata TEXT,
+      varchardata VARCHAR
+    );"""
+
+    run(conn, create_str)
+
+    data = Vector[
+        Any[1, 1.0, "1", "one"],
+        Any[2, 2.0, "2", "two"],
+        Any[3, 3.0, "3", "three"],
+    ]
+
+    insert_str = "INSERT INTO testarrays(intdata, floatdata, textdata, varchardata) " *
+                 "VALUES(\$1, \$2, \$3, \$4);"
+
+    stmt = prepare(conn, insert_str)
+    for row in data
+        execute(stmt, row)
+        testdberror(stmt, PostgreSQL.PGRES_COMMAND_OK)
+    end
+    finish(stmt)
+
+    stmt = prepare(conn, "SELECT * FROM testarrays WHERE textdata = ANY(\$1);")
+    rs = execute(stmt, Any[["1", "2"]])
+    for (i, row) in enumerate(rs)
+      @test row[1] == data[i][1]
+      @test row[2] == data[i][2]
+      @test row[3] == data[i][3]
+      @test row[4] == data[i][4]
+    end
+    testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
+    finish(stmt)
+
+    stmt = prepare(conn, "SELECT * FROM testarrays WHERE textdata = ANY(\$1::varchar[]);")
+    rs = execute(stmt, Any[["one", "two"]])
+    for (i, row) in enumerate(rs)
+      @test row[1] == data[i][1]
+      @test row[2] == data[i][2]
+      @test row[3] == data[i][3]
+      @test row[4] == data[i][4]
+    end
+    testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
+    finish(stmt)
+
+    stmt = prepare(conn, "SELECT * FROM testarrays WHERE intdata = ANY(\$1);")
+    rs = execute(stmt, Any[[1, 2]])
+    for (i, row) in enumerate(rs)
+      @test row[1] == data[i][1]
+      @test row[2] == data[i][2]
+      @test row[3] == data[i][3]
+      @test row[4] == data[i][4]
+    end
+    testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
+    finish(stmt)
+
+    stmt = prepare(conn, "SELECT * FROM testarrays WHERE floatdata = ANY(\$1);")
+    rs = execute(stmt, Any[[1.0, 2.0]])
+    for (i, row) in enumerate(rs)
+      @test row[1] == data[i][1]
+      @test row[2] == data[i][2]
+      @test row[3] == data[i][3]
+      @test row[4] == data[i][4]
+    end
+    testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
+    finish(stmt)
+
+    stmt = prepare(conn, """
+    SELECT 
+    '{1,2}'::integer[], 
+    '{1.0,2.0}'::double precision[], 
+    '{"aaa", "bbb"}'::text[],
+    '{"aaa", "bbb"}'::varchar[];
+    """)
+    rs = execute(stmt)
+    for row in rs
+      @test row[1] == [1,2]
+      @test row[2] == [1.0,2.0]
+      @test row[3] == ["aaa","bbb"]
+      @test row[4] == ["aaa","bbb"]
+    end
+    testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
+    finish(stmt)
 
     disconnect(conn)
 end
