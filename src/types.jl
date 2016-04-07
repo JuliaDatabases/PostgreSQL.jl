@@ -22,6 +22,9 @@ function newpgtype(pgtypename, oid, jltypes)
     end
 end
 
+# To check oids in postgres, use this SQL query on a psql prompt:
+#   select typname, typarray, oid from pg_type;
+##
 newpgtype(:bool, 16, (Bool,))
 newpgtype(:bytea, 17, (Vector{UInt8},))
 newpgtype(:int8, 20, (Int64,))
@@ -38,6 +41,16 @@ newpgtype(:timestamp, 1114, ())
 newpgtype(:unknown, 705, (Union,NAtype))
 newpgtype(:json, 114, (Dict{AbstractString,Any},))
 newpgtype(:jsonb, 3802, (Dict{AbstractString,Any},))
+
+# Support for Postgres array types, underscore indicates array
+newpgtype(:_bool, 1000, (Vector{Bool},))
+newpgtype(:_int8, 1016, (Vector{Int64},))
+newpgtype(:_int4, 1007, (Vector{Int32},))
+newpgtype(:_int2, 1005, (Vector{Int16},))
+newpgtype(:_float8, 1022, (Vector{Float64},))
+newpgtype(:_float4, 1021, (Vector{Float32},))
+newpgtype(:_varchar, 1015, (Vector{ASCIIString}, Vector{UTF8String}))
+newpgtype(:_text, 1009, (Vector{ASCIIString}, Vector{UTF8String}))
 
 
 typealias PGStringTypes Union{Type{PostgresType{:bpchar}},
@@ -90,6 +103,22 @@ jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}) = Union{}
 jldata(::Type{PostgresType{:json}}, ptr::Ptr{UInt8}) = JSON.parse(bytestring(ptr))
 
 jldata(::Type{PostgresType{:jsonb}}, ptr::Ptr{UInt8}) = JSON.parse(bytestring(ptr))
+
+jldata(::Type{PostgresType{:_bool}}, ptr::Ptr{UInt8}) = map(x -> x != "f", split(bytestring(ptr)[2:end-1], ','))
+
+jldata(::Type{PostgresType{:_int8}}, ptr::Ptr{UInt8}) = map(x -> parse(Int64, x), split(bytestring(ptr)[2:end-1], ','))
+
+jldata(::Type{PostgresType{:_int4}}, ptr::Ptr{UInt8}) = map(x -> parse(Int32, x), split(bytestring(ptr)[2:end-1], ','))
+
+jldata(::Type{PostgresType{:_int2}}, ptr::Ptr{UInt8}) = map(x -> parse(Int16, x), split(bytestring(ptr)[2:end-1], ','))
+
+jldata(::Type{PostgresType{:_float8}}, ptr::Ptr{UInt8}) = map(x -> parse(Float64, x), split(bytestring(ptr)[2:end-1], ','))
+
+jldata(::Type{PostgresType{:_float4}}, ptr::Ptr{UInt8}) = map(x -> parse(Float32, x), split(bytestring(ptr)[2:end-1], ','))
+
+jldata(::Type{PostgresType{:_varchar}}, ptr::Ptr{UInt8}) = convert(Vector{AbstractString}, split(bytestring(ptr)[2:end-1], ','))
+
+jldata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}) = convert(Vector{AbstractString}, split(bytestring(ptr)[2:end-1], ','))
 
 function pgdata(::Type{PostgresType{:bool}}, ptr::Ptr{UInt8}, data::Bool)
     ptr = data ? storestring!(ptr, "TRUE") : storestring!(ptr, "FALSE")
@@ -150,6 +179,46 @@ end
 
 function pgdata(::Type{PostgresType{:jsonb}}, ptr::Ptr{UInt8}, data::Dict{AbstractString,Any})
     ptr = storestring!(ptr, bytestring(JSON.json(data)))
+end
+
+function pgdata(::Type{PostgresType{:_bool}}, ptr::Ptr{UInt8}, data::Vector{Bool})
+    ptr = storestring!(ptr, string("{", join(map(x -> x ? "t" : "f", data), ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_int8}}, ptr::Ptr{UInt8}, data::Vector{Int64})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_int4}}, ptr::Ptr{UInt8}, data::Vector{Int32})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_int2}}, ptr::Ptr{UInt8}, data::Vector{Int16})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_float8}}, ptr::Ptr{UInt8}, data::Vector{Float64})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_float4}}, ptr::Ptr{UInt8}, data::Vector{Float64})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_varchar}}, ptr::Ptr{UInt8}, data::Vector{ASCIIString})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_varchar}}, ptr::Ptr{UInt8}, data::Vector{UTF8String})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}, data::Vector{ASCIIString})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+end
+
+function pgdata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}, data::Vector{UTF8String})
+    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
 end
 
 # dbi
