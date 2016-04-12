@@ -132,7 +132,7 @@ function test_dbi()
       intdata INTEGER,
       otherint INTEGER,
       textdata TEXT,
-      floatdata DOUBLE PRECISION,
+      floatdata DOUBLE PRECISION
     );"""
 
     run(conn, create_str)
