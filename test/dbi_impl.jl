@@ -132,11 +132,12 @@ function test_dbi()
       intdata INTEGER,
       otherint INTEGER,
       textdata TEXT,
+      color VARCHAR,
       floatdata DOUBLE PRECISION
     );"""
 
     run(conn, create_str)
-    copy_from(conn, "testcopycsv", "test_data.csv", "csv")
+    PostgreSQL.copy_from(conn, "testcopycsv", "test_data.csv", "csv")
 
     stmt = prepare(conn, "SELECT * FROM testcopycsv WHERE intdata > 1;")
     rs = execute(stmt)

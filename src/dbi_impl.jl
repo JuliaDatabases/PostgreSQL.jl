@@ -122,6 +122,7 @@ function copy_from(db::PostgresDatabaseHandle, table::AbstractString,
         errmsg = bytestring(DBI.errmsg(db))
         error("Error $errcode: $errmsg")
     end
+    return checkerrclear(PQgetResult(db.ptr))
 end
 
 hashsql(sql::AbstractString) = bytestring(string("__", hash(sql), "__"))
