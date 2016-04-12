@@ -148,6 +148,8 @@ function test_dbi()
     testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
     finish(stmt)
 
+    @test_throws ErrorException PostgreSQL.copy_from(conn, "testcopycsv", "test_malformed_data.csv", "binary")
+
     disconnect(conn)
 
     # Test arrays
