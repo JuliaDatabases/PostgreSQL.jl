@@ -98,7 +98,26 @@ function escapeliteral(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF
     return str
 end
 
+function escapeidentifier(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF8String})
+    strptr = PQescapeIdentifier(db.ptr, value, sizeof(value))
+    str = bytestring(strptr)
+    PQfreemem(strptr)
+    return str
+end
+
 Base.run(db::PostgresDatabaseHandle, sql::AbstractString) = checkerrclear(PQexec(db.ptr, sql))
+
+function copy_from(db::PostgresDatabaseHandle, table::AbstractString,
+                   filename::AbstractString)
+    Base.run(db, string("COPY ", escapeidentifier(db, table), " FROM STDIN csv"))
+    f = open(filename)
+    for row in eachline(f)
+        # send row to postgres
+        PQputCopyData(db.ptr, row, length(row))
+    end
+    PQputCopyEnd(db.ptr, C_NULL)
+    close(f)
+end
 
 hashsql(sql::AbstractString) = bytestring(string("__", hash(sql), "__"))
 
