@@ -68,10 +68,13 @@ module libpq_interface
            PQftype,
            PQfname,
            PQgetlength,
+           PQgetResult,
            PQresStatus,
            PQresultStatus,
            PQresultErrorMessage,
            PQclear,
+           PQputCopyData,
+           PQputCopyEnd,
            # misc
            PQescapeLiteral,
            PQescapeIdentifier,

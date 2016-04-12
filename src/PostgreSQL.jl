@@ -1,6 +1,7 @@
 module PostgreSQL
     export  Postgres,
             executemany,
+            copy_from,
             escapeliteral
 
     using BinDeps

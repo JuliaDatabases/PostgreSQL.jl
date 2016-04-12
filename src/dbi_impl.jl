@@ -98,7 +98,38 @@ function escapeliteral(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF
     return str
 end
 
+function escapeidentifier(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF8String})
+    strptr = PQescapeIdentifier(db.ptr, value, sizeof(value))
+    str = bytestring(strptr)
+    PQfreemem(strptr)
+    return str
+end
+
 Base.run(db::PostgresDatabaseHandle, sql::AbstractString) = checkerrclear(PQexec(db.ptr, sql))
+
+function checkcopyreturnval(db::PostgresDatabaseHandle, returnval::Int32)
+    if returnval == -1
+        errcode = bytestring(DBI.errcode(db))
+        errmsg = bytestring(DBI.errmsg(db))
+        error("Error $errcode: $errmsg")
+    end
+end
+
+function copy_from(db::PostgresDatabaseHandle, table::AbstractString,
+                   filename::AbstractString, format::AbstractString)
+    f = open(filename)
+    try
+        Base.run(db, string("COPY ", escapeidentifier(db, table), " FROM STDIN ", format))
+        for row in eachline(f)
+            # send row to postgres
+            checkcopyreturnval(db, PQputCopyData(db.ptr, row, length(row)))
+        end
+        checkcopyreturnval(db, PQputCopyEnd(db.ptr, C_NULL))
+    finally
+        close(f)
+    end
+    return checkerrclear(PQgetResult(db.ptr))
+end
 
 hashsql(sql::AbstractString) = bytestring(string("__", hash(sql), "__"))
 
