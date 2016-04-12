@@ -108,15 +108,20 @@ end
 Base.run(db::PostgresDatabaseHandle, sql::AbstractString) = checkerrclear(PQexec(db.ptr, sql))
 
 function copy_from(db::PostgresDatabaseHandle, table::AbstractString,
-                   filename::AbstractString)
-    Base.run(db, string("COPY ", escapeidentifier(db, table), " FROM STDIN csv"))
+                   filename::AbstractString, format::AbstractString)
     f = open(filename)
+    Base.run(db, string("COPY ", escapeidentifier(db, table), " FROM STDIN ", format))
     for row in eachline(f)
         # send row to postgres
         PQputCopyData(db.ptr, row, length(row))
     end
-    PQputCopyEnd(db.ptr, C_NULL)
+    result = PQputCopyEnd(db.ptr, C_NULL)
     close(f)
+    if result == -1
+        errcode = bytestring(DBI.errcode(db))
+        errmsg = bytestring(DBI.errmsg(db))
+        error("Error $errcode: $errmsg")
+    end
 end
 
 hashsql(sql::AbstractString) = bytestring(string("__", hash(sql), "__"))
