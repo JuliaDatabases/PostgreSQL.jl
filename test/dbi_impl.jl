@@ -126,6 +126,29 @@ function test_dbi()
 
     disconnect(conn)
 
+    # Test copy
+    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
+    create_str = """CREATE TEMPORARY TABLE testcopycsv(
+      intdata INTEGER,
+      otherint INTEGER,
+      textdata TEXT,
+      floatdata DOUBLE PRECISION,
+    );"""
+
+    run(conn, create_str)
+    copy_from(conn, "testcopycsv", "test_data.csv", "csv")
+
+    stmt = prepare(conn, "SELECT * FROM testcopycsv WHERE intdata > 1;")
+    rs = execute(stmt)
+    rows = fetchall(rs)
+    @test rows[1][1] == 2
+    @test rows[1][4] == "green"
+    @test rows[2][3] == "i'm sick of eggs now"
+    testdberror(stmt, PostgreSQL.PGRES_TUPLES_OK)
+    finish(stmt)
+
+    disconnect(conn)
+
     # Test arrays
     conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
     create_str = """CREATE TEMPORARY TABLE testarrays(
