@@ -38,6 +38,7 @@ newpgtype(:text, 25, ())
 newpgtype(:numeric, 1700, (BigInt,BigFloat))
 newpgtype(:date, 1082, ())
 newpgtype(:timestamp, 1114, ())
+newpgtype(:timestamptz, 1184, ())
 newpgtype(:unknown, 705, (Union,NAtype))
 newpgtype(:json, 114, (Dict{AbstractString,Any},))
 newpgtype(:jsonb, 3802, (Dict{AbstractString,Any},))
@@ -76,6 +77,8 @@ end
 jldata(::Type{PostgresType{:date}}, ptr::Ptr{UInt8}) = bytestring(ptr)
 
 jldata(::Type{PostgresType{:timestamp}}, ptr::Ptr{UInt8}) = bytestring(ptr)
+
+jldata(::Type{PostgresType{:timestamptz}}, ptr::Ptr{UInt8}) = bytestring(ptr)
 
 jldata(::Type{PostgresType{:bool}}, ptr::Ptr{UInt8}) = bytestring(ptr) != "f"
 
@@ -162,6 +165,10 @@ function pgdata(::PostgresType{:date}, ptr::Ptr{UInt8}, data::AbstractString)
 end
 
 function pgdata(::PostgresType{:timestamp}, ptr::Ptr{UInt8}, data::AbstractString)
+    ptr = storestring!(ptr, bytestring(data))
+end
+
+function pgdata(::PostgresType{:timestamptz}, ptr::Ptr{UInt8}, data::AbstractString)
     ptr = storestring!(ptr, bytestring(data))
 end
 
