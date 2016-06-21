@@ -5,6 +5,11 @@
 An interface to PostgreSQL from Julia. Uses libpq (the C PostgreSQL API) and obeys the [DBI.jl protocol](https://github.com/JuliaDB/DBI.jl).
 
 
+## Maintenance Notice
+
+I can no longer spend work time on this so this project is in maintenance mode (accepting PRs and attempting to resolve issues). New code on the `dbapi` branch represents the most recent work, which I will continue if I am in a position to do so again.
+
+
 ## Usage
 
 ```julia
