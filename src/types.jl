@@ -180,11 +180,11 @@ function pgdata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}, data)
     ptr = storestring!(ptr, string(data))
 end
 
-function pgdata(::Type{PostgresType{:json}}, ptr::Ptr{UInt8}, data::Dict{AbstractString,Any})
+function pgdata{T<:AbstractString}(::Type{PostgresType{:json}}, ptr::Ptr{UInt8}, data::Dict{T,Any})
     ptr = storestring!(ptr, bytestring(JSON.json(data)))
 end
 
-function pgdata(::Type{PostgresType{:jsonb}}, ptr::Ptr{UInt8}, data::Dict{AbstractString,Any})
+function pgdata{T<:AbstractString}(::Type{PostgresType{:jsonb}}, ptr::Ptr{UInt8}, data::Dict{T,Any})
     ptr = storestring!(ptr, bytestring(JSON.json(data)))
 end
 

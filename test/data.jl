@@ -62,11 +62,10 @@ end
 function test_json()
     PGType = PostgreSQL.PostgresType
     for typ in Any[PGType{:json}, PGType{:jsonb}]
-        dict1 = @compat Dict{AbstractString,Any}("bobr dobr" => [1, 2, 3])
+        dict1 = @compat Dict("bobr dobr" => [1, 2, 3], "foo" => 3.0)
         p = PostgreSQL.pgdata(typ, convert(Ptr{UInt8}, C_NULL), dict1)
         try
             dict2 = PostgreSQL.jldata(typ, p)
-            @test typeof(dict1) == typeof(dict2)
             @test dict1 == dict2
         finally
             Libc.free(p)
