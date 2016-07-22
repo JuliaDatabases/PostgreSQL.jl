@@ -1,6 +1,6 @@
 function testpostgres()
     PostgresType = PostgreSQL.PostgresType
-    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
+    conn = connect(Postgres, host="localhost", user="postgres", db="julia_test")
     run(conn, """CREATE TEMPORARY TABLE foobar (foo INTEGER PRIMARY KEY, bar DOUBLE PRECISION,
         foobar CHARACTER VARYING);""")
     stmt = prepare(conn, "INSERT INTO foobar (foo, bar, foobar) VALUES (\$1, \$2, \$3);")
