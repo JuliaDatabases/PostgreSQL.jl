@@ -7,7 +7,7 @@ An interface to PostgreSQL from Julia. Uses libpq (the C PostgreSQL API) and obe
 
 ## Maintenance Notice
 
-I can no longer spend work time on this so this project is in maintenance mode (accepting PRs and attempting to resolve issues). New code on the `dbapi` branch represents the most recent work, which I will continue if I am in a position to do so again.
+I can no longer spend work time on this so this project is in maintenance mode (accepting PRs and attempting to resolve issues). New code on the `DBAPI`(https://github.com/JuliaDB/DBAPI.jl) branch represents the most recent work, which I will continue if I am in a position to do so again.
 
 
 ## Usage
@@ -48,7 +48,7 @@ end
 * [DataFrames.jl](https://github.com/JuliaStats/DataFrames.jl) >= v0.5.7
 * [DataArrays.jl](https://github.com/JuliaStats/DataArrays.jl) >= v0.1.2
 * libpq shared library (comes with a standard PostgreSQL client installation)
-* julia 0.3
+* Julia 0.4
 
 Tests require a local PostgreSQL server with a postgres user/database (installed by default with PostgreSQL server installations) with trusted authentication from localhost.
 
