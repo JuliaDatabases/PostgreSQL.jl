@@ -291,7 +291,7 @@ end
 function DBI.fetchdf(result::PostgresResultHandle)
     df = DataFrame()
     for i = 0:(length(result.types)-1)
-        df[symbol(unsafe_string(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
+        df[Symbol(unsafe_string(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
     end
 
     return df
