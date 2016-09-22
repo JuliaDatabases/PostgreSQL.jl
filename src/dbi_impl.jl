@@ -10,7 +10,7 @@ function Base.connect(::Type{Postgres},
     status = PQstatus(conn)
 
     if status != CONNECTION_OK
-        errmsg = unsafe_string(PQerrorMessage(conn))
+        errmsg = bytestring(PQerrorMessage(conn))
         PQfinish(conn)
         error(errmsg)
     end
@@ -36,7 +36,7 @@ function Base.connect(::Type{Postgres};
     conn = PQconnectdb(dsn)
     status = PQstatus(conn)
     if status != CONNECTION_OK
-        errmsg = unsafe_string(PQerrorMessage(conn))
+        errmsg = bytestring(PQerrorMessage(conn))
         PQfinish(conn)
         error(errmsg)
     end
@@ -60,7 +60,7 @@ function DBI.errcode(db::PostgresDatabaseHandle)
 end
 
 function DBI.errstring(db::PostgresDatabaseHandle)
-    return unsafe_string(PQerrorMessage(db.ptr))
+    return bytestring(PQerrorMessage(db.ptr))
 end
 
 function DBI.errcode(res::PostgresResultHandle)
@@ -68,7 +68,7 @@ function DBI.errcode(res::PostgresResultHandle)
 end
 
 function DBI.errstring(res::PostgresResultHandle)
-    return unsafe_string(PQresultErrorMessage(res.ptr))
+    return bytestring(PQresultErrorMessage(res.ptr))
 end
 
 DBI.errcode(stmt::PostgresStatementHandle) = DBI.errcode(stmt.result)
@@ -79,8 +79,8 @@ function checkerrclear(result::Ptr{PGresult})
 
     try
         if status == PGRES_FATAL_ERROR
-            statustext = unsafe_string(PQresStatus(status))
-            errmsg = unsafe_string(PQresultErrorMessage(result))
+            statustext = bytestring(PQresStatus(status))
+            errmsg = bytestring(PQresultErrorMessage(result))
             error("$statustext: $errmsg")
         end
     finally
@@ -92,14 +92,14 @@ escapeliteral(db::PostgresDatabaseHandle, value) = value
 
 function escapeliteral(db::PostgresDatabaseHandle, value::String)
     strptr = PQescapeLiteral(db.ptr, value, sizeof(value))
-    str = unsafe_string(strptr)
+    str = bytestring(strptr)
     PQfreemem(strptr)
     return str
 end
 
 function escapeidentifier(db::PostgresDatabaseHandle, value::String)
     strptr = PQescapeIdentifier(db.ptr, value, sizeof(value))
-    str = unsafe_string(strptr)
+    str = bytestring(strptr)
     PQfreemem(strptr)
     return str
 end
@@ -108,8 +108,8 @@ Base.run(db::PostgresDatabaseHandle, sql::AbstractString) = checkerrclear(PQexec
 
 function checkcopyreturnval(db::PostgresDatabaseHandle, returnval::Int32)
     if returnval == -1
-        errcode = unsafe_string(DBI.errcode(db))
-        errmsg = unsafe_string(DBI.errmsg(db))
+        errcode = bytestring(DBI.errcode(db))
+        errmsg = bytestring(DBI.errmsg(db))
         error("Error $errcode: $errmsg")
     end
 end
@@ -129,7 +129,7 @@ function copy_from(db::PostgresDatabaseHandle, table::AbstractString, filename::
     return checkerrclear(PQgetResult(db.ptr))
 end
 
-hashsql(sql::AbstractString) = unsafe_string(string("__", hash(sql), "__"))
+hashsql(sql::AbstractString) = bytestring(string("__", hash(sql), "__"))
 
 function getparamtypes(result::Ptr{PGresult})
     nparams = PQnparams(result)
@@ -291,7 +291,7 @@ end
 function DBI.fetchdf(result::PostgresResultHandle)
     df = DataFrame()
     for i = 0:(length(result.types)-1)
-        df[Symbol(unsafe_string(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
+        df[Symbol(bytestring(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
     end
 
     return df
