@@ -1,6 +1,6 @@
 julia 0.4
 DataFrames 0.6.6
-DataArrays
+DataArrays 0.1.2
 Compat
 JSON
 BinDeps
