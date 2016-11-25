@@ -9,30 +9,7 @@ abstract AbstractOID
 type OID{N} <: AbstractOID end
 
 oid{T<:AbstractPostgresType}(t::Type{T}) = convert(OID, t)
-
-if VERSION < v"0.5-dev+4194"
-    import Compat
-
-    function pgtype(t::Type)
-        if t <: Compat.ASCIIString
-            convert(PostgresType, String)
-        elseif t <: Vector{Compat.ASCIIString}
-            convert(PostgresType, Vector{String})
-        else
-            convert(PostgresType, t)
-        end
-    end
-
-    function pgdata(::Type{PostgresType{:_varchar}}, ptr::Ptr{UInt8}, data::Vector{Compat.ASCIIString})
-        ptr = storestring!(ptr, string("{", join(data, ','), "}"))
-    end
-
-    function pgdata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}, data::Vector{Compat.ASCIIString})
-        ptr = storestring!(ptr, string("{", join(data, ','), "}"))
-    end
-else
-    pgtype(t::Type) = convert(PostgresType, t)
-end
+pgtype(t::Type) = convert(PostgresType, t)
 
 Base.convert{T}(::Type{Oid}, ::Type{OID{T}}) = convert(Oid, T)
 
@@ -289,3 +266,17 @@ function Base.copy(rh::PostgresResultHandle)
         PG_COPYRES_NOTICEHOOKS | PG_COPYRES_EVENTS), copy(rh.types), rh.ntuples, rh.nfields)
 end
 
+if VERSION < v"0.5-dev+4194"
+    import Compat
+
+    pgtype{T<:Compat.ASCIIString}(::Type{T}) = convert(PostgresType, String)
+    pgtype{T<:Vector{Compat.ASCIIString}}(::Type{T}) = convert(PostgresType, Vector{String})
+
+    function pgdata(::Type{PostgresType{:_varchar}}, ptr::Ptr{UInt8}, data::Vector{Compat.ASCIIString})
+        ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+    end
+
+    function pgdata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}, data::Vector{Compat.ASCIIString})
+        ptr = storestring!(ptr, string("{", join(data, ','), "}"))
+    end
+end
