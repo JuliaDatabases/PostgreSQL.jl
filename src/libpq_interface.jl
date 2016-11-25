@@ -124,9 +124,6 @@ module libpq_interface
     @c Cint fscanf (Ptr{FILE}, Ptr{UInt8}) libpq
     @c Cint scanf (Ptr{UInt8},) libpq
     @c Cint sscanf (Ptr{UInt8}, Ptr{UInt8}) libpq
-    @c Cint fscanf (Ptr{FILE}, Ptr{UInt8}) libpq
-    @c Cint scanf (Ptr{UInt8},) libpq
-    @c Cint sscanf (Ptr{UInt8}, Ptr{UInt8}) libpq
     @c Cint fgetc (Ptr{FILE},) libpq
     @c Cint getc (Ptr{FILE},) libpq
     @c Cint getchar () libpq
