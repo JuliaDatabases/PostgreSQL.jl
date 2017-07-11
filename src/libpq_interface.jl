@@ -82,98 +82,99 @@ module libpq_interface
 
     include("libpq_common.jl")
 
-    @c Cint _IO_getc (Ptr{_IO_FILE},) libpq
-    @c Cint _IO_putc (Cint, Ptr{_IO_FILE}) libpq
-    @c Cint _IO_feof (Ptr{_IO_FILE},) libpq
-    @c Cint _IO_ferror (Ptr{_IO_FILE},) libpq
-    @c Cint _IO_peekc_locked (Ptr{_IO_FILE},) libpq
-    @c Void _IO_flockfile (Ptr{_IO_FILE},) libpq
-    @c Void _IO_funlockfile (Ptr{_IO_FILE},) libpq
-    @c Cint _IO_ftrylockfile (Ptr{_IO_FILE},) libpq
-    @c Cint _IO_vfscanf (Ptr{_IO_FILE}, Ptr{UInt8}, Cint, Ptr{Cint}) libpq
-    @c Cint _IO_vfprintf (Ptr{_IO_FILE}, Ptr{UInt8}, Cint) libpq
-    # @c __ssize_t _IO_padn (Ptr{_IO_FILE}, Cint, __ssize_t) libpq
-    @c Cint _IO_sgetn (Ptr{_IO_FILE}, Ptr{Void}, Cint) libpq
-    @c __off64_t _IO_seekoff (Ptr{_IO_FILE}, __off64_t, Cint, Cint) libpq
-    @c __off64_t _IO_seekpos (Ptr{_IO_FILE}, __off64_t, Cint) libpq
-    @c Void _IO_free_backup_area (Ptr{_IO_FILE},) libpq
-    @c Cint remove (Ptr{UInt8},) libpq
-    @c Cint rename (Ptr{UInt8}, Ptr{UInt8}) libpq
-    @c Cint renameat (Cint, Ptr{UInt8}, Cint, Ptr{UInt8}) libpq
-    @c Ptr{FILE} tmpfile () libpq
-    @c Ptr{UInt8} tmpnam (Ptr{UInt8},) libpq
-    @c Ptr{UInt8} tmpnam_r (Ptr{UInt8},) libpq
-    @c Ptr{UInt8} tempnam (Ptr{UInt8}, Ptr{UInt8}) libpq
-    @c Cint fclose (Ptr{FILE},) libpq
-    @c Cint fflush (Ptr{FILE},) libpq
-    @c Cint fflush_unlocked (Ptr{FILE},) libpq
-    @c Ptr{FILE} fopen (Ptr{UInt8}, Ptr{UInt8}) libpq
-    @c Ptr{FILE} freopen (Ptr{UInt8}, Ptr{UInt8}, Ptr{FILE}) libpq
-    @c Ptr{FILE} fdopen (Cint, Ptr{UInt8}) libpq
-    @c Ptr{FILE} fmemopen (Ptr{Void}, Cint, Ptr{UInt8}) libpq
-    @c Ptr{FILE} open_memstream (Ptr{Ptr{UInt8}}, Ptr{Cint}) libpq
-    @c Void setbuf (Ptr{FILE}, Ptr{UInt8}) libpq
-    @c Cint setvbuf (Ptr{FILE}, Ptr{UInt8}, Cint, Cint) libpq
-    @c Void setbuffer (Ptr{FILE}, Ptr{UInt8}, Cint) libpq
-    @c Void setlinebuf (Ptr{FILE},) libpq
-    @c Cint fprintf (Ptr{FILE}, Ptr{UInt8}) libpq
-    @c Cint printf (Ptr{UInt8},) libpq
-    @c Cint sprintf (Ptr{UInt8}, Ptr{UInt8}) libpq
-    @c Cint vdprintf (Cint, Ptr{UInt8}, Cint) libpq
-    @c Cint dprintf (Cint, Ptr{UInt8}) libpq
-    @c Cint fscanf (Ptr{FILE}, Ptr{UInt8}) libpq
-    @c Cint scanf (Ptr{UInt8},) libpq
-    @c Cint sscanf (Ptr{UInt8}, Ptr{UInt8}) libpq
-    @c Cint fscanf (Ptr{FILE}, Ptr{UInt8}) libpq
-    @c Cint scanf (Ptr{UInt8},) libpq
-    @c Cint sscanf (Ptr{UInt8}, Ptr{UInt8}) libpq
-    @c Cint fgetc (Ptr{FILE},) libpq
-    @c Cint getc (Ptr{FILE},) libpq
-    @c Cint getchar () libpq
-    @c Cint getc_unlocked (Ptr{FILE},) libpq
-    @c Cint getchar_unlocked () libpq
-    @c Cint fgetc_unlocked (Ptr{FILE},) libpq
-    @c Cint fputc (Cint, Ptr{FILE}) libpq
-    @c Cint putc (Cint, Ptr{FILE}) libpq
-    @c Cint putchar (Cint,) libpq
-    @c Cint fputc_unlocked (Cint, Ptr{FILE}) libpq
-    @c Cint putc_unlocked (Cint, Ptr{FILE}) libpq
-    @c Cint putchar_unlocked (Cint,) libpq
-    @c Cint getw (Ptr{FILE},) libpq
-    @c Cint putw (Cint, Ptr{FILE}) libpq
-    @c Ptr{UInt8} fgets (Ptr{UInt8}, Cint, Ptr{FILE}) libpq
-    @c Ptr{UInt8} gets (Ptr{UInt8},) libpq
-    # @c __ssize_t getdelim (Ptr{Ptr{UInt8}}, Ptr{Cint}, Cint, Ptr{FILE}) libpq
-    # @c __ssize_t getline (Ptr{Ptr{UInt8}}, Ptr{Cint}, Ptr{FILE}) libpq
-    @c Cint fputs (Ptr{UInt8}, Ptr{FILE}) libpq
-    @c Cint puts (Ptr{UInt8},) libpq
-    @c Cint ungetc (Cint, Ptr{FILE}) libpq
-    @c Cint fread (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
-    @c Cint fwrite (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
-    @c Cint fread_unlocked (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
-    @c Cint fwrite_unlocked (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
-    @c Cint fseek (Ptr{FILE}, Clong, Cint) libpq
-    @c Clong ftell (Ptr{FILE},) libpq
-    @c Void rewind (Ptr{FILE},) libpq
-    # @c Cint fseeko (Ptr{FILE}, __off_t, Cint) libpq
-    # @c __off_t ftello (Ptr{FILE},) libpq
-    # @c Cint fgetpos (Ptr{FILE}, Ptr{fpos_t}) libpq
-    # @c Cint fsetpos (Ptr{FILE}, Ptr{fpos_t}) libpq
-    @c Void clearerr (Ptr{FILE},) libpq
-    @c Cint feof (Ptr{FILE},) libpq
-    @c Cint ferror (Ptr{FILE},) libpq
-    @c Void clearerr_unlocked (Ptr{FILE},) libpq
-    @c Cint feof_unlocked (Ptr{FILE},) libpq
-    @c Cint ferror_unlocked (Ptr{FILE},) libpq
-    @c Void perror (Ptr{UInt8},) libpq
-    @c Cint fileno (Ptr{FILE},) libpq
-    @c Cint fileno_unlocked (Ptr{FILE},) libpq
-    @c Ptr{FILE} popen (Ptr{UInt8}, Ptr{UInt8}) libpq
-    @c Cint pclose (Ptr{FILE},) libpq
-    @c Ptr{UInt8} ctermid (Ptr{UInt8},) libpq
-    @c Void flockfile (Ptr{FILE},) libpq
-    @c Cint ftrylockfile (Ptr{FILE},) libpq
-    @c Void funlockfile (Ptr{FILE},) libpq
+    # @c Cint _IO_getc (Ptr{_IO_FILE},) libpq
+    # @c Cint _IO_putc (Cint, Ptr{_IO_FILE}) libpq
+    # @c Cint _IO_feof (Ptr{_IO_FILE},) libpq
+    # @c Cint _IO_ferror (Ptr{_IO_FILE},) libpq
+    # @c Cint _IO_peekc_locked (Ptr{_IO_FILE},) libpq
+    # @c Void _IO_flockfile (Ptr{_IO_FILE},) libpq
+    # @c Void _IO_funlockfile (Ptr{_IO_FILE},) libpq
+    # @c Cint _IO_ftrylockfile (Ptr{_IO_FILE},) libpq
+    # @c Cint _IO_vfscanf (Ptr{_IO_FILE}, Ptr{UInt8}, Cint, Ptr{Cint}) libpq
+    # @c Cint _IO_vfprintf (Ptr{_IO_FILE}, Ptr{UInt8}, Cint) libpq
+    # # @c __ssize_t _IO_padn (Ptr{_IO_FILE}, Cint, __ssize_t) libpq
+    # @c Cint _IO_sgetn (Ptr{_IO_FILE}, Ptr{Void}, Cint) libpq
+    # @c __off64_t _IO_seekoff (Ptr{_IO_FILE}, __off64_t, Cint, Cint) libpq
+    # @c __off64_t _IO_seekpos (Ptr{_IO_FILE}, __off64_t, Cint) libpq
+    # @c Void _IO_free_backup_area (Ptr{_IO_FILE},) libpq
+    # @c Cint remove (Ptr{UInt8},) libpq
+    # @c Cint rename (Ptr{UInt8}, Ptr{UInt8}) libpq
+    # @c Cint renameat (Cint, Ptr{UInt8}, Cint, Ptr{UInt8}) libpq
+    # @c Ptr{FILE} tmpfile () libpq
+    # @c Ptr{UInt8} tmpnam (Ptr{UInt8},) libpq
+    # @c Ptr{UInt8} tmpnam_r (Ptr{UInt8},) libpq
+    # @c Ptr{UInt8} tempnam (Ptr{UInt8}, Ptr{UInt8}) libpq
+    # @c Cint fclose (Ptr{FILE},) libpq
+    # @c Cint fflush (Ptr{FILE},) libpq
+    # @c Cint fflush_unlocked (Ptr{FILE},) libpq
+    # @c Ptr{FILE} fopen (Ptr{UInt8}, Ptr{UInt8}) libpq
+    # @c Ptr{FILE} freopen (Ptr{UInt8}, Ptr{UInt8}, Ptr{FILE}) libpq
+    # @c Ptr{FILE} fdopen (Cint, Ptr{UInt8}) libpq
+    # @c Ptr{FILE} fmemopen (Ptr{Void}, Cint, Ptr{UInt8}) libpq
+    # @c Ptr{FILE} open_memstream (Ptr{Ptr{UInt8}}, Ptr{Cint}) libpq
+    # @c Void setbuf (Ptr{FILE}, Ptr{UInt8}) libpq
+    # @c Cint setvbuf (Ptr{FILE}, Ptr{UInt8}, Cint, Cint) libpq
+    # @c Void setbuffer (Ptr{FILE}, Ptr{UInt8}, Cint) libpq
+    # @c Void setlinebuf (Ptr{FILE},) libpq
+    # @c Cint fprintf (Ptr{FILE}, Ptr{UInt8}) libpq
+    # @c Cint printf (Ptr{UInt8},) libpq
+    # @c Cint sprintf (Ptr{UInt8}, Ptr{UInt8}) libpq
+    # @c Cint vdprintf (Cint, Ptr{UInt8}, Cint) libpq
+    # @c Cint dprintf (Cint, Ptr{UInt8}) libpq
+    # @c Cint fscanf (Ptr{FILE}, Ptr{UInt8}) libpq
+    # @c Cint scanf (Ptr{UInt8},) libpq
+    # @c Cint sscanf (Ptr{UInt8}, Ptr{UInt8}) libpq
+    # @c Cint fscanf (Ptr{FILE}, Ptr{UInt8}) libpq
+    # @c Cint scanf (Ptr{UInt8},) libpq
+    # @c Cint sscanf (Ptr{UInt8}, Ptr{UInt8}) libpq
+    # @c Cint fgetc (Ptr{FILE},) libpq
+    # @c Cint getc (Ptr{FILE},) libpq
+    # @c Cint getchar () libpq
+    # @c Cint getc_unlocked (Ptr{FILE},) libpq
+    # @c Cint getchar_unlocked () libpq
+    # @c Cint fgetc_unlocked (Ptr{FILE},) libpq
+    # @c Cint fputc (Cint, Ptr{FILE}) libpq
+    # @c Cint putc (Cint, Ptr{FILE}) libpq
+    # @c Cint putchar (Cint,) libpq
+    # @c Cint fputc_unlocked (Cint, Ptr{FILE}) libpq
+    # @c Cint putc_unlocked (Cint, Ptr{FILE}) libpq
+    # @c Cint putchar_unlocked (Cint,) libpq
+    # @c Cint getw (Ptr{FILE},) libpq
+    # @c Cint putw (Cint, Ptr{FILE}) libpq
+    # @c Ptr{UInt8} fgets (Ptr{UInt8}, Cint, Ptr{FILE}) libpq
+    # @c Ptr{UInt8} gets (Ptr{UInt8},) libpq
+    # # @c __ssize_t getdelim (Ptr{Ptr{UInt8}}, Ptr{Cint}, Cint, Ptr{FILE}) libpq
+    # # @c __ssize_t getline (Ptr{Ptr{UInt8}}, Ptr{Cint}, Ptr{FILE}) libpq
+    # @c Cint fputs (Ptr{UInt8}, Ptr{FILE}) libpq
+    # @c Cint puts (Ptr{UInt8},) libpq
+    # @c Cint ungetc (Cint, Ptr{FILE}) libpq
+    # @c Cint fread (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
+    # @c Cint fwrite (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
+    # @c Cint fread_unlocked (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
+    # @c Cint fwrite_unlocked (Ptr{Void}, Cint, Cint, Ptr{FILE}) libpq
+    # @c Cint fseek (Ptr{FILE}, Clong, Cint) libpq
+    # @c Clong ftell (Ptr{FILE},) libpq
+    # @c Void rewind (Ptr{FILE},) libpq
+    # # @c Cint fseeko (Ptr{FILE}, __off_t, Cint) libpq
+    # # @c __off_t ftello (Ptr{FILE},) libpq
+    # # @c Cint fgetpos (Ptr{FILE}, Ptr{fpos_t}) libpq
+    # # @c Cint fsetpos (Ptr{FILE}, Ptr{fpos_t}) libpq
+    # @c Void clearerr (Ptr{FILE},) libpq
+    # @c Cint feof (Ptr{FILE},) libpq
+    # @c Cint ferror (Ptr{FILE},) libpq
+    # @c Void clearerr_unlocked (Ptr{FILE},) libpq
+    # @c Cint feof_unlocked (Ptr{FILE},) libpq
+    # @c Cint ferror_unlocked (Ptr{FILE},) libpq
+    # @c Void perror (Ptr{UInt8},) libpq
+    # @c Cint fileno (Ptr{FILE},) libpq
+    # @c Cint fileno_unlocked (Ptr{FILE},) libpq
+    # @c Ptr{FILE} popen (Ptr{UInt8}, Ptr{UInt8}) libpq
+    # @c Cint pclose (Ptr{FILE},) libpq
+    # @c Ptr{UInt8} ctermid (Ptr{UInt8},) libpq
+    # @c Void flockfile (Ptr{FILE},) libpq
+    # @c Cint ftrylockfile (Ptr{FILE},) libpq
+    # @c Void funlockfile (Ptr{FILE},) libpq
+
     @c Ptr{PGconn} PQconnectStart (Ptr{UInt8},) libpq
     @c Ptr{PGconn} PQconnectStartParams (Ptr{Ptr{UInt8}}, Ptr{Ptr{UInt8}}, Cint) libpq
     @c PostgresPollingStatusType PQconnectPoll (Ptr{PGconn},) libpq
@@ -215,6 +216,7 @@ module libpq_interface
     @c Void PQinitSSL (Cint,) libpq
     @c Void PQinitOpenSSL (Cint, Cint) libpq
     @c PGVerbosity PQsetErrorVerbosity (Ptr{PGconn}, PGVerbosity) libpq
+    typealias FILE Void
     @c Void PQtrace (Ptr{PGconn}, Ptr{FILE}) libpq
     @c Void PQuntrace (Ptr{PGconn},) libpq
     @c PQnoticeReceiver PQsetNoticeReceiver (Ptr{PGconn}, PQnoticeReceiver, Ptr{Void}) libpq

@@ -13,6 +13,8 @@ module PostgreSQL
 
     include("libpq_interface.jl")
     using .libpq_interface
+
+    using Compat
     using DBI
     using DataFrames
     using DataArrays

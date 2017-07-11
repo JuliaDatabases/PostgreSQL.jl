@@ -1,5 +1,3 @@
-import Compat: Libc, @compat
-
 function Base.connect(::Type{Postgres},
                       host::AbstractString="",
                       user::AbstractString="",
@@ -91,14 +89,14 @@ end
 escapeliteral(db::PostgresDatabaseHandle, value) = value
 escapeliteral(db::PostgresDatabaseHandle, value::AbstractString) = escapeliteral(db, bytestring(value))
 
-function escapeliteral(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF8String})
+function escapeliteral(db::PostgresDatabaseHandle, value::String)
     strptr = PQescapeLiteral(db.ptr, value, sizeof(value))
     str = bytestring(strptr)
     PQfreemem(strptr)
     return str
 end
 
-function escapeidentifier(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF8String})
+function escapeidentifier(db::PostgresDatabaseHandle, value::String)
     strptr = PQescapeIdentifier(db.ptr, value, sizeof(value))
     str = bytestring(strptr)
     PQfreemem(strptr)
@@ -138,7 +136,7 @@ function getparamtypes(result::Ptr{PGresult})
     return @compat [pgtype(OID{Int(PQparamtype(result, i-1))}) for i = 1:nparams]
 end
 
-LIBC = @windows ? "msvcrt.dll" : :libc
+LIBC = @static is_windows() ? "msvcrt.dll" : :libc
 strlen(ptr::Ptr{UInt8}) = ccall((:strlen, LIBC), Csize_t, (Ptr{UInt8},), ptr)
 
 function getparams!(ptrs::Vector{Ptr{UInt8}}, params, types, sizes, lengths::Vector{Int32}, nulls)
