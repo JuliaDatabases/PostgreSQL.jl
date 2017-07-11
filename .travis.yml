@@ -6,7 +6,8 @@ addons:
   postgresql: "9.3"
 julia:
   - 0.4
-  - nightly
+  - 0.5
+  - 0.6
 notifications:
   email: false
 before_script:
