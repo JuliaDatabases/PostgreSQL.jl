@@ -1,5 +1,5 @@
 julia 0.4
-DataFrames 0.6.6
+DataFrames 0.8.0
 DataArrays
 Compat
 JSON
