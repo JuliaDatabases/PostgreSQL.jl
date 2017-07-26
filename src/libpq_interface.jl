@@ -94,8 +94,6 @@ module libpq_interface
     @c Cint _IO_vfprintf (Ptr{_IO_FILE}, Ptr{UInt8}, Cint) libpq
     # @c __ssize_t _IO_padn (Ptr{_IO_FILE}, Cint, __ssize_t) libpq
     @c Cint _IO_sgetn (Ptr{_IO_FILE}, Ptr{Void}, Cint) libpq
-    @c __off64_t _IO_seekoff (Ptr{_IO_FILE}, __off64_t, Cint, Cint) libpq
-    @c __off64_t _IO_seekpos (Ptr{_IO_FILE}, __off64_t, Cint) libpq
     @c Void _IO_free_backup_area (Ptr{_IO_FILE},) libpq
     @c Cint remove (Ptr{UInt8},) libpq
     @c Cint rename (Ptr{UInt8}, Ptr{UInt8}) libpq

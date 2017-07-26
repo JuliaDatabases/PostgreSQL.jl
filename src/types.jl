@@ -2,10 +2,10 @@ import DataArrays: NAtype
 import JSON
 import Compat: Libc, unsafe_convert, parse, @compat, String, unsafe_string
 
-abstract AbstractPostgresType
+@compat abstract type AbstractPostgresType end
 type PostgresType{Name} <: AbstractPostgresType end
 
-abstract AbstractOID
+@compat abstract type AbstractOID end
 type OID{N} <: AbstractOID end
 
 oid{T<:AbstractPostgresType}(t::Type{T}) = convert(OID, t)
@@ -55,7 +55,7 @@ newpgtype(:_varchar, 1015, (Vector{String},))
 newpgtype(:_text, 1009, (Vector{String},))
 
 
-typealias PGStringTypes Union{Type{PostgresType{:bpchar}},
+const PGStringTypes = Union{Type{PostgresType{:bpchar}},
                               Type{PostgresType{:varchar}},
                               Type{PostgresType{:text}},
                               Type{PostgresType{:date}}}
@@ -153,24 +153,24 @@ function pgdata(::Type{PostgresType{:numeric}}, ptr::Ptr{UInt8}, data::Number)
 end
 
 function pgdata(::PGStringTypes, ptr::Ptr{UInt8}, data::AbstractString)
-    ptr = storestring!(ptr, data)
+    ptr = storestring!(ptr, String(data))
 end
 
 function pgdata(::PostgresType{:date}, ptr::Ptr{UInt8}, data::AbstractString)
-    ptr = storestring!(ptr, data)
+    ptr = storestring!(ptr, String(data))
     ptr = Dates.DateFormat(ptr)
 end
 
 function pgdata(::PostgresType{:timestamp}, ptr::Ptr{UInt8}, data::AbstractString)
-    ptr = storestring!(ptr, data)
+    ptr = storestring!(ptr, String(data))
 end
 
 function pgdata(::PostgresType{:timestamptz}, ptr::Ptr{UInt8}, data::AbstractString)
-    ptr = storestring!(ptr, data)
+    ptr = storestring!(ptr, String(data))
 end
 
 function pgdata(::Type{PostgresType{:bytea}}, ptr::Ptr{UInt8}, data::Vector{UInt8})
-    ptr = storestring!(ptr, string("\\x", bytes2hex(data)))
+    ptr = storestring!(ptr, String(string("\\x", bytes2hex(data))))
 end
 
 function pgdata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}, data)
@@ -178,11 +178,11 @@ function pgdata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}, data)
 end
 
 function pgdata{T<:AbstractString}(::Type{PostgresType{:json}}, ptr::Ptr{UInt8}, data::Dict{T,Any})
-    ptr = storestring!(ptr, JSON.json(data))
+    ptr = storestring!(ptr, String(JSON.json(data)))
 end
 
 function pgdata{T<:AbstractString}(::Type{PostgresType{:jsonb}}, ptr::Ptr{UInt8}, data::Dict{T,Any})
-    ptr = storestring!(ptr, JSON.json(data))
+    ptr = storestring!(ptr, String(JSON.json(data)))
 end
 
 function pgdata(::Type{PostgresType{:_bool}}, ptr::Ptr{UInt8}, data::Vector{Bool})
@@ -218,7 +218,7 @@ function pgdata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}, data::Vector{Stri
 end
 
 # dbi
-abstract Postgres <: DBI.DatabaseSystem
+@compat abstract type Postgres<:DBI.DatabaseSystem end
 
 type PostgresDatabaseHandle <: DBI.DatabaseHandle
     ptr::Ptr{PGconn}

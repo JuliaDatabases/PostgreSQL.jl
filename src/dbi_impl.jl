@@ -130,7 +130,7 @@ function copy_from(db::PostgresDatabaseHandle, table::AbstractString,
     return checkerrclear(PQgetResult(db.ptr))
 end
 
-hashsql(sql::AbstractString) = unsafe_string(string("__", hash(sql), "__"))
+hashsql(sql::AbstractString) = String(string("__", hash(sql), "__"))
 
 function getparamtypes(result::Ptr{PGresult})
     nparams = PQnparams(result)

@@ -50,14 +50,14 @@ const PGF_BINARY = 1
 # Skipping MacroDefinition: PQsetdb(M_PGHOST,M_PGPORT,M_PGOPT,M_PGTTY,M_DBNAME)PQsetdbLogin(M_PGHOST,M_PGPORT,M_PGOPT,M_PGTTY,M_DBNAME,NULL,NULL)
 # Skipping MacroDefinition: PQfreeNotify(ptr)PQfreemem(ptr)
 const PQnoPasswordSupplied = "fe_sendauth: no password supplied\n"
-typealias _IO_lock_t Union{}
-typealias va_list Cint
+const _IO_lock_t = Union{}
+const va_list = Cint
 # typealias off_t __off_t
 # typealias ssize_t __ssize_t
 # typealias fpos_t _G_fpos_t
-typealias Oid UInt32
+const Oid = UInt32
 # begin enum ConnStatusType
-typealias ConnStatusType UInt32
+const ConnStatusType = UInt32
 const CONNECTION_OK = 0
 const CONNECTION_BAD = 1
 const CONNECTION_STARTED = 2
@@ -69,7 +69,7 @@ const CONNECTION_SSL_STARTUP = 7
 const CONNECTION_NEEDED = 8
 # end enum ConnStatusType
 # begin enum PostgresPollingStatusType
-typealias PostgresPollingStatusType UInt32
+const PostgresPollingStatusType = UInt32
 const PGRES_POLLING_FAILED = 0
 const PGRES_POLLING_READING = 1
 const PGRES_POLLING_WRITING = 2
@@ -77,7 +77,7 @@ const PGRES_POLLING_OK = 3
 const PGRES_POLLING_ACTIVE = 4
 # end enum PostgresPollingStatusType
 # begin enum ExecStatusType
-typealias ExecStatusType UInt32
+const ExecStatusType = UInt32
 const PGRES_EMPTY_QUERY = 0
 const PGRES_COMMAND_OK = 1
 const PGRES_TUPLES_OK = 2
@@ -90,7 +90,7 @@ const PGRES_COPY_BOTH = 8
 const PGRES_SINGLE_TUPLE = 9
 # end enum ExecStatusType
 # begin enum PGTransactionStatusType
-typealias PGTransactionStatusType UInt32
+const PGTransactionStatusType = UInt32
 const PQTRANS_IDLE = 0
 const PQTRANS_ACTIVE = 1
 const PQTRANS_INTRANS = 2
@@ -98,21 +98,30 @@ const PQTRANS_INERROR = 3
 const PQTRANS_UNKNOWN = 4
 # end enum PGTransactionStatusType
 # begin enum PGVerbosity
-typealias PGVerbosity UInt32
+const PGVerbosity = UInt32
 const PQERRORS_TERSE = 0
 const PQERRORS_DEFAULT = 1
 const PQERRORS_VERBOSE = 2
 # end enum PGVerbosity
 # begin enum PGPing
-typealias PGPing UInt32
+const PGPing = UInt32
 const PQPING_OK = 0
 const PQPING_REJECT = 1
 const PQPING_NO_RESPONSE = 2
 const PQPING_NO_ATTEMPT = 3
 # end enum PGPing
-typealias PQnoticeReceiver Ptr{Void}
-typealias PQnoticeProcessor Ptr{Void}
-typealias pqbool UInt8
-typealias pgthreadlock_t Ptr{Void}
-typealias PGconn Void
-typealias PGresult Void
+const PQnoticeReceiver = Ptr{Void}
+const PQnoticeProcessor = Ptr{Void}
+const pqbool = UInt8
+const pgthreadlock_t = Ptr{Void}
+const PGconn = Void
+const PGresult = Void
+
+const _IO_FILE = Void
+const FILE = Void
+const PQconninfoOption = Void
+const PGcancel = Void
+const PGnotify = Void
+const PQArgBlock = Void
+const PGresAttDesc = Void
+const PQprintOpt = Void
