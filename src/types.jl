@@ -42,6 +42,7 @@ newpgtype(:timestamptz, 1184, ())
 newpgtype(:unknown, 705, (Union,NAtype))
 newpgtype(:json, 114, (Dict{AbstractString,Any},))
 newpgtype(:jsonb, 3802, (Dict{AbstractString,Any},))
+newpgtype(:uuid, 2950, (Base.Random.UUID,))
 
 # Support for Postgres array types, underscore indicates array
 newpgtype(:_bool, 1000, (Vector{Bool},))
@@ -106,6 +107,8 @@ jldata(::Type{PostgresType{:unknown}}, ptr::Ptr{UInt8}) = Union{}
 jldata(::Type{PostgresType{:json}}, ptr::Ptr{UInt8}) = JSON.parse(bytestring(ptr))
 
 jldata(::Type{PostgresType{:jsonb}}, ptr::Ptr{UInt8}) = JSON.parse(bytestring(ptr))
+
+jldata(::Type{PostgresType{:uuid}}, ptr::Ptr{UInt8}) = Base.Random.UUID(unsafe_string(ptr))
 
 jldata(::Type{PostgresType{:_bool}}, ptr::Ptr{UInt8}) = map(x -> x != "f", split(bytestring(ptr)[2:end-1], ','))
 
@@ -276,4 +279,3 @@ function Base.copy(rh::PostgresResultHandle)
     PostgresResultHandle(PQcopyResult(result, PG_COPYRES_ATTRS | PG_COPYRES_TUPLES |
         PG_COPYRES_NOTICEHOOKS | PG_COPYRES_EVENTS), copy(rh.types), rh.ntuples, rh.nfields)
 end
-
