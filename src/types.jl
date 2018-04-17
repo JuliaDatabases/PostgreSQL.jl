@@ -58,8 +58,9 @@ typealias PGStringTypes Union{Type{PostgresType{:bpchar}},
                               Type{PostgresType{:date}}}
 
 function storestring!(ptr::Ptr{UInt8}, str::AbstractString)
-    ptr = convert(Ptr{UInt8}, Libc.realloc(ptr, sizeof(str)+1))
-    unsafe_copy!(ptr, unsafe_convert(Ptr{UInt8}, str), sizeof(str)+1)
+    n = sizeof(str)+1
+    ptr = convert(Ptr{UInt8}, Libc.realloc(ptr, n))
+    unsafe_copy!(ptr, convert(Vector{UInt8}, str), n)
     return ptr
 end
 

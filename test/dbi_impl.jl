@@ -1,8 +1,7 @@
 import DataFrames: DataFrameRow
 import DataArrays: NA
-import Compat: @compat, parse
 
-function test_dbi()
+@testset "dbi" begin
     @test Postgres <: DBI.DatabaseSystem
 
     conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
@@ -224,9 +223,9 @@ function test_dbi()
     finish(stmt)
 
     stmt = prepare(conn, """
-    SELECT 
-    '{1,2}'::integer[], 
-    '{1.0,2.0}'::double precision[], 
+    SELECT
+    '{1,2}'::integer[],
+    '{1.0,2.0}'::double precision[],
     '{"aaa", "bbb"}'::text[],
     '{"aaa", "bbb"}'::varchar[];
     """)
@@ -242,5 +241,3 @@ function test_dbi()
 
     disconnect(conn)
 end
-
-test_dbi()

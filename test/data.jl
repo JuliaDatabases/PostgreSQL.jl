@@ -1,6 +1,7 @@
 import Compat: Libc, @compat
 
-function test_numerics()
+@testset "Data" begin
+@testset "Numerics" begin
     PostgresType = PostgreSQL.PostgresType
     values = @compat Any[Int16(4), Int32(4), Int64(4), Float32(4), Float64(4)]
 
@@ -30,7 +31,7 @@ function test_numerics()
     end
 end
 
-function test_strings()
+@testset "Strings" begin
     PGType = PostgreSQL.PostgresType
     for typ in [PGType{:varchar}, PGType{:text}, PGType{:bpchar}]
         for str in Any["foobar", "fooba\u211D"]
@@ -46,7 +47,7 @@ function test_strings()
     end
 end
 
-function test_bytea()
+@testset "bytea" begin
     typ = PostgreSQL.PostgresType{:bytea}
     bin = (UInt8)[0x01, 0x03, 0x42, 0xab, 0xff]
     p = PostgreSQL.pgdata(typ, convert(Ptr{UInt8}, C_NULL), bin)
@@ -59,7 +60,7 @@ function test_bytea()
     end
 end
 
-function test_json()
+@testset "JSON" begin
     PGType = PostgreSQL.PostgresType
     for typ in Any[PGType{:json}, PGType{:jsonb}]
         dict1 = @compat Dict("bobr dobr" => [1, 2, 3], "foo" => 3.0)
@@ -72,8 +73,3 @@ function test_json()
         end
     end
 end
-
-test_numerics()
-test_strings()
-test_bytea()
-test_json()
