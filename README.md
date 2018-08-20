@@ -2,12 +2,12 @@
 
 [![Build Status](https://travis-ci.org/JuliaDB/PostgreSQL.jl.svg)](https://travis-ci.org/JuliaDB/PostgreSQL.jl)  [![Coverage Status](https://img.shields.io/coveralls/JuliaDB/PostgreSQL.jl.svg)](https://coveralls.io/r/JuliaDB/PostgreSQL.jl)  [![codecov.io](http://codecov.io/github/JuliaDB/PostgreSQL.jl/coverage.svg)](http://codecov.io/github/JuliaDB/PostgreSQL.jl)
 
-An interface to PostgreSQL from Julia. Uses libpq (the C PostgreSQL API) and obeys the [DBI.jl protocol](https://github.com/JuliaDB/DBI.jl).
+An interface to PostgreSQL from Julia. Uses libpq (the C PostgreSQL API) and obeys the [DBI.jl protocol](https://github.com/JuliaDatabases/DBI.jl).
 
 
 ## Maintenance Notice
 
-I can no longer spend work time on this so this project is in maintenance mode (accepting PRs and attempting to resolve issues). New code on the `dbapi` branch (https://github.com/JuliaDB/DBAPI.jl) represents the most recent work, which I will continue if I am in a position to do so again.
+I can no longer spend work time on this so this project is in maintenance mode (accepting PRs and attempting to resolve issues). New code on the `dbapi` branch (https://github.com/JuliaDatabases/DBAPI.jl) represents the most recent work, which I will continue if I am in a position to do so again.
 
 
 ## Usage
@@ -44,7 +44,7 @@ end
 
 ## Requirements
 
-* [DBI.jl](https://github.com/JuliaDB/DBI.jl)
+* [DBI.jl](https://github.com/JuliaDatabases/DBI.jl)
 * [DataFrames.jl](https://github.com/JuliaStats/DataFrames.jl) >= v0.5.7
 * [DataArrays.jl](https://github.com/JuliaStats/DataArrays.jl) >= v0.1.2
 * libpq shared library (comes with a standard PostgreSQL client installation)
