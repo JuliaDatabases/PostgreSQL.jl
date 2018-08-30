@@ -1,24 +1,25 @@
 using BinDeps
+using Compat
 
 @BinDeps.setup
 
-libpq = library_dependency("libpq", aliases=["libpq5"])
+const libpq = library_dependency("libpq", aliases=["libpq5"])
 
-major, minor = (9,4)
-branch = "REL$(major)_$(minor)_STABLE"
+const major, minor = (9,4)
+const branch = "REL$(major)_$(minor)_STABLE"
 
-postgresql_srcurl = "http://git.postgresql.org/gitweb/?p=postgresql.git;a=snapshot;h=refs/heads/$branch;sf=tgz"
-postgresql_giturl = "https://github.com/postgres/postgres"  # GitHub mirror
+const postgresql_srcurl = "http://git.postgresql.org/gitweb/?p=postgresql.git;a=snapshot;h=refs/heads/$branch;sf=tgz"
+const postgresql_giturl = "https://github.com/postgres/postgres"  # GitHub mirror
 
-postgresql_srcdir = joinpath(BinDeps.srcdir(libpq), "postgresql")
-postgresql_usrdir = BinDeps.usrdir(libpq)
+const postgresql_srcdir = joinpath(BinDeps.srcdir(libpq), "postgresql")
+const postgresql_usrdir = BinDeps.usrdir(libpq)
 
 provides(AptGet, "libpq5", libpq)
 provides(Yum, "libpq5", libpq)
 provides(Yum, "postgresql-libs", libpq)
 provides(Pacman, "postgresql-libs", libpq)
 
-@osx_only begin
+@static if is_apple()
     using Homebrew
     provides(Homebrew.HB, "postgresql", libpq, os=:Darwin)
 end

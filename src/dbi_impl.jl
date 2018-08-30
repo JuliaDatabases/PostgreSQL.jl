@@ -1,5 +1,3 @@
-import Compat: Libc, @compat
-
 function Base.connect(::Type{Postgres},
                       host::AbstractString="",
                       user::AbstractString="",
@@ -10,7 +8,7 @@ function Base.connect(::Type{Postgres},
     status = PQstatus(conn)
 
     if status != CONNECTION_OK
-        errmsg = bytestring(PQerrorMessage(conn))
+        errmsg = unsafe_string(PQerrorMessage(conn))
         PQfinish(conn)
         error(errmsg)
     end
@@ -36,7 +34,7 @@ function Base.connect(::Type{Postgres};
     conn = PQconnectdb(dsn)
     status = PQstatus(conn)
     if status != CONNECTION_OK
-        errmsg = bytestring(PQerrorMessage(conn))
+        errmsg = unsafe_string(PQerrorMessage(conn))
         PQfinish(conn)
         error(errmsg)
     end
@@ -60,7 +58,7 @@ function DBI.errcode(db::PostgresDatabaseHandle)
 end
 
 function DBI.errstring(db::PostgresDatabaseHandle)
-    return bytestring(PQerrorMessage(db.ptr))
+    return unsafe_string(PQerrorMessage(db.ptr))
 end
 
 function DBI.errcode(res::PostgresResultHandle)
@@ -68,7 +66,7 @@ function DBI.errcode(res::PostgresResultHandle)
 end
 
 function DBI.errstring(res::PostgresResultHandle)
-    return bytestring(PQresultErrorMessage(res.ptr))
+    return unsafe_string(PQresultErrorMessage(res.ptr))
 end
 
 DBI.errcode(stmt::PostgresStatementHandle) = DBI.errcode(stmt.result)
@@ -79,8 +77,8 @@ function checkerrclear(result::Ptr{PGresult})
 
     try
         if status == PGRES_FATAL_ERROR
-            statustext = bytestring(PQresStatus(status))
-            errmsg = bytestring(PQresultErrorMessage(result))
+            statustext = unsafe_string(PQresStatus(status))
+            errmsg = unsafe_string(PQresultErrorMessage(result))
             error("$statustext: $errmsg")
         end
     finally
@@ -89,18 +87,18 @@ function checkerrclear(result::Ptr{PGresult})
 end
 
 escapeliteral(db::PostgresDatabaseHandle, value) = value
-escapeliteral(db::PostgresDatabaseHandle, value::AbstractString) = escapeliteral(db, bytestring(value))
+escapeliteral(db::PostgresDatabaseHandle, value::AbstractString) = escapeliteral(db, unsafe_string(value))
 
-function escapeliteral(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF8String})
+function escapeliteral(db::PostgresDatabaseHandle, value::String)
     strptr = PQescapeLiteral(db.ptr, value, sizeof(value))
-    str = bytestring(strptr)
+    str = unsafe_string(strptr)
     PQfreemem(strptr)
     return str
 end
 
-function escapeidentifier(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF8String})
+function escapeidentifier(db::PostgresDatabaseHandle, value::String)
     strptr = PQescapeIdentifier(db.ptr, value, sizeof(value))
-    str = bytestring(strptr)
+    str = unsafe_string(strptr)
     PQfreemem(strptr)
     return str
 end
@@ -109,8 +107,8 @@ Base.run(db::PostgresDatabaseHandle, sql::AbstractString) = checkerrclear(PQexec
 
 function checkcopyreturnval(db::PostgresDatabaseHandle, returnval::Int32)
     if returnval == -1
-        errcode = bytestring(DBI.errcode(db))
-        errmsg = bytestring(DBI.errmsg(db))
+        errcode = unsafe_string(DBI.errcode(db))
+        errmsg = unsafe_string(DBI.errmsg(db))
         error("Error $errcode: $errmsg")
     end
 end
@@ -131,14 +129,14 @@ function copy_from(db::PostgresDatabaseHandle, table::AbstractString,
     return checkerrclear(PQgetResult(db.ptr))
 end
 
-hashsql(sql::AbstractString) = bytestring(string("__", hash(sql), "__"))
+hashsql(sql::AbstractString) = unsafe_string(string("__", hash(sql), "__"))
 
 function getparamtypes(result::Ptr{PGresult})
     nparams = PQnparams(result)
     return @compat [pgtype(OID{Int(PQparamtype(result, i-1))}) for i = 1:nparams]
 end
 
-LIBC = @windows ? "msvcrt.dll" : :libc
+LIBC = @static is_windows() ? "msvcrt.dll" : :libc
 strlen(ptr::Ptr{UInt8}) = ccall((:strlen, LIBC), Csize_t, (Ptr{UInt8},), ptr)
 
 function getparams!(ptrs::Vector{Ptr{UInt8}}, params, types, sizes, lengths::Vector{Int32}, nulls)
@@ -293,7 +291,7 @@ end
 function DBI.fetchdf(result::PostgresResultHandle)
     df = DataFrame()
     for i = 0:(length(result.types)-1)
-        df[symbol(bytestring(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
+        df[Symbol(unsafe_string(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
     end
 
     return df

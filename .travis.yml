@@ -6,14 +6,15 @@ addons:
   postgresql: "9.3"
 julia:
   - 0.4
-  - nightly
+  - 0.5
+  - 0.6
 notifications:
   email: false
 before_script:
   - psql -c 'create database julia_test;' -U postgres
 script:
   - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
-  - julia -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaDB/DBI.jl")'
+  - julia -e 'Pkg.clone(pwd()); Pkg.clone("https://github.com/JuliaDB/DBI.jl"); Pkg.build("PostgreSQL");'
   - julia -e 'using PostgreSQL; @assert isdefined(:PostgreSQL); @assert typeof(PostgreSQL) === Module'
   - julia -e 'Pkg.test("PostgreSQL"; coverage=true)'
 after_success:

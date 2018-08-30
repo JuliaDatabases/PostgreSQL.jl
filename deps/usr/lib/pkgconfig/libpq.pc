@@ -1,0 +1,9 @@
+Name: libpq
+Description: PostgreSQL libpq library
+Url: http://www.postgresql.org/
+Version: 9.4.12
+Requires: 
+Requires.private: 
+Cflags: -I/Users/jgoldfar/Documents/misc/julia/PostgreSQL/deps/usr/include
+Libs: -L/Users/jgoldfar/Documents/misc/julia/PostgreSQL/deps/usr/lib -lpq
+Libs.private:  -lpthread

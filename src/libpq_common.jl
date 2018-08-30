@@ -1,5 +1,5 @@
 macro c(ret_type, func, arg_types, lib)
-    local args_in = Any[ symbol(string('a',x)) for x in 1:length(arg_types.args) ]
+    local args_in = Any[ Symbol(string('a',x)) for x in 1:length(arg_types.args) ]
     quote
         $(esc(func))($(args_in...)) = ccall( ($(string(func)), $(Expr(:quote, lib)) ),
                                             $ret_type, $arg_types, $(args_in...) )
@@ -7,11 +7,11 @@ macro c(ret_type, func, arg_types, lib)
 end
 
 
-const unix = 1
-const linux = 1
-const EOF = (-1)
+# const unix = 1
+# const linux = 1
+# const EOF = (-1)
 # Skipping MacroDefinition: NULL((void*)0)
-const BUFSIZ =
+# const BUFSIZ =
 const SEEK_SET = 0
 const SEEK_CUR = 1
 const SEEK_END = 2
@@ -21,9 +21,9 @@ const TMP_MAX = 238328
 const FILENAME_MAX = 4096
 const L_ctermid = 9
 const FOPEN_MAX = 16
-const stdin =
-const stdout =
-const stderr =
+# const stdin =
+# const stdout =
+# const stderr =
 # Skipping MacroDefinition: getc(_fp)_IO_getc(_fp)
 # Skipping MacroDefinition: putc(_ch,_fp)_IO_putc(_ch,_fp)
 # Skipping MacroDefinition: InvalidOid((Oid)0)
@@ -51,7 +51,7 @@ const PGF_BINARY = 1
 # Skipping MacroDefinition: PQfreeNotify(ptr)PQfreemem(ptr)
 const PQnoPasswordSupplied = "fe_sendauth: no password supplied\n"
 typealias _IO_lock_t Union{}
-typealias va_list Cint
+# typealias va_list Cint
 # typealias off_t __off_t
 # typealias ssize_t __ssize_t
 # typealias fpos_t _G_fpos_t
@@ -112,6 +112,12 @@ const PQPING_NO_ATTEMPT = 3
 # end enum PGPing
 typealias PQnoticeReceiver Ptr{Void}
 typealias PQnoticeProcessor Ptr{Void}
+typealias PQconninfoOption Void
+typealias PGcancel Void
+typealias PGnotify Void
+typealias PQArgBlock Void
+typealias PQprintOpt Void
+typealias PGresAttDesc Void
 typealias pqbool UInt8
 typealias pgthreadlock_t Ptr{Void}
 typealias PGconn Void
