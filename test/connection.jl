@@ -3,7 +3,7 @@ function test_connection()
     libpq = PostgreSQL.libpq_interface
 
     println("Checking basic connect")
-    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
+    conn = connect(Postgres, user="postgres", db="julia_test")
     @test isa(conn, PostgreSQL.PostgresDatabaseHandle)
     @test conn.status == PostgreSQL.CONNECTION_OK
     @test errcode(conn) == PostgreSQL.CONNECTION_OK
@@ -17,7 +17,7 @@ function test_connection()
     println("Basic connection passed")
 
     println("Checking doblock")
-    conn = connect(Postgres, "localhost", "postgres", "", "julia_test") do conn
+    conn = connect(Postgres, user="postgres", db="julia_test") do conn
         @test isa(conn, PostgreSQL.PostgresDatabaseHandle)
         @test conn.status == PostgreSQL.CONNECTION_OK
         @test errcode(conn) == PostgreSQL.CONNECTION_OK
@@ -28,7 +28,7 @@ function test_connection()
     println("Doblock passed")
 
     println("Testing connection with DSN string")
-    conn = connect(Postgres; dsn="postgresql://postgres@localhost:5432/julia_test")
+    conn = connect(Postgres, "postgresql://postgres@localhost:5432/julia_test")
     @test isa(conn, PostgreSQL.PostgresDatabaseHandle)
     @test conn.status == PostgreSQL.CONNECTION_OK
     @test errcode(conn) == PostgreSQL.CONNECTION_OK
@@ -42,7 +42,7 @@ function test_connection()
     println("DSN connection passed")
 
 #=    println("Testing connection with DSN string and doblock")
-    conn = connect(Postgres; dsn="postgresql://postgres@localhost:5432/postgres") do conn
+    conn = connect(Postgres, "postgresql://postgres@localhost:5432/postgres") do conn
         @test isa(conn, PostgreSQL.PostgresDatabaseHandle)
         @test conn.status == PostgreSQL.CONNECTION_OK
         @test errcode(conn) == PostgreSQL.CONNECTION_OK

@@ -1,12 +1,19 @@
 import Compat: Libc, @compat
 
-function Base.connect(::Type{Postgres},
+function Base.connect(::Type{Postgres};
                       host::AbstractString="",
                       user::AbstractString="",
                       passwd::AbstractString="",
                       db::AbstractString="",
-                      port::AbstractString="")
-    conn = PQsetdbLogin(host, port, C_NULL, C_NULL, db, user, passwd)
+                      port::Union{Integer,AbstractString}="")
+    _host   = host   == "" ? C_NULL : host;
+    _db     = db     == "" ? C_NULL : db;
+    _user   = user   == "" ? C_NULL : user;
+    _passwd = passwd == "" ? C_NULL : passwd;
+    _port   = typeof(port) <: Integer ? string(port) :
+              port == "" ? C_NULL : port;
+
+    conn = PQsetdbLogin(_host, _port, C_NULL, C_NULL, _db, _user, _passwd);
     status = PQstatus(conn)
 
     if status != CONNECTION_OK
@@ -20,18 +27,9 @@ function Base.connect(::Type{Postgres},
     return conn
 end
 
-function Base.connect(::Type{Postgres},
-                      host::AbstractString,
-                      user::AbstractString,
-                      passwd::AbstractString,
-                      db::AbstractString,
-                      port::Integer)
-    Base.connect(Postgres, host, user, passwd, db, string(port))
-end
-
 # Note that for some reason, `do conn` notation
 # doesn't work using this version of the function
-function Base.connect(::Type{Postgres};
+function Base.connect(::Type{Postgres},
                       dsn::AbstractString="")
     conn = PQconnectdb(dsn)
     status = PQstatus(conn)

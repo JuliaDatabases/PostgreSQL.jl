@@ -5,7 +5,7 @@ import Compat: @compat, parse
 function test_dbi()
     @test Postgres <: DBI.DatabaseSystem
 
-    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
+    conn = connect(Postgres, host="localhost", user="postgres", db="julia_test")
 
     @test isa(conn, DBI.DatabaseHandle)
     @test isdefined(conn, :status)
@@ -93,7 +93,7 @@ function test_dbi()
 
     disconnect(conn)
 
-    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
+    conn = connect(Postgres, host="localhost", user="postgres", db="julia_test")
     run(conn, create_str)
     stmt = prepare(conn, insert_str)
     executemany(stmt, data)
@@ -127,7 +127,7 @@ function test_dbi()
     disconnect(conn)
 
     # Test copy
-    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
+    conn = connect(Postgres, host="localhost", user="postgres", db="julia_test")
     create_str = """CREATE TEMPORARY TABLE testcopycsv(
       intdata INTEGER,
       otherint INTEGER,
@@ -153,7 +153,7 @@ function test_dbi()
     disconnect(conn)
 
     # Test arrays
-    conn = connect(Postgres, "localhost", "postgres", "", "julia_test")
+    conn = connect(Postgres, host="localhost", user="postgres", db="julia_test")
     create_str = """CREATE TEMPORARY TABLE testarrays(
       intdata INTEGER,
       floatdata DOUBLE PRECISION,
