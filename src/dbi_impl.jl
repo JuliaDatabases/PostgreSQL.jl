@@ -89,16 +89,15 @@ function checkerrclear(result::Ptr{PGresult})
 end
 
 escapeliteral(db::PostgresDatabaseHandle, value) = value
-escapeliteral(db::PostgresDatabaseHandle, value::AbstractString) = escapeliteral(db, bytestring(value))
 
-function escapeliteral(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF8String})
+function escapeliteral(db::PostgresDatabaseHandle, value::String)
     strptr = PQescapeLiteral(db.ptr, value, sizeof(value))
     str = bytestring(strptr)
     PQfreemem(strptr)
     return str
 end
 
-function escapeidentifier(db::PostgresDatabaseHandle, value::Union{ASCIIString, UTF8String})
+function escapeidentifier(db::PostgresDatabaseHandle, value::String)
     strptr = PQescapeIdentifier(db.ptr, value, sizeof(value))
     str = bytestring(strptr)
     PQfreemem(strptr)
@@ -115,8 +114,7 @@ function checkcopyreturnval(db::PostgresDatabaseHandle, returnval::Int32)
     end
 end
 
-function copy_from(db::PostgresDatabaseHandle, table::AbstractString,
-                   filename::AbstractString, format::AbstractString)
+function copy_from(db::PostgresDatabaseHandle, table::AbstractString, filename::AbstractString, format::AbstractString)
     f = open(filename)
     try
         Base.run(db, string("COPY ", escapeidentifier(db, table), " FROM STDIN ", format))
@@ -138,7 +136,7 @@ function getparamtypes(result::Ptr{PGresult})
     return @compat [pgtype(OID{Int(PQparamtype(result, i-1))}) for i = 1:nparams]
 end
 
-LIBC = @windows ? "msvcrt.dll" : :libc
+LIBC = @static is_windows() ? "msvcrt.dll" : :libc
 strlen(ptr::Ptr{UInt8}) = ccall((:strlen, LIBC), Csize_t, (Ptr{UInt8},), ptr)
 
 function getparams!(ptrs::Vector{Ptr{UInt8}}, params, types, sizes, lengths::Vector{Int32}, nulls)
@@ -293,7 +291,7 @@ end
 function DBI.fetchdf(result::PostgresResultHandle)
     df = DataFrame()
     for i = 0:(length(result.types)-1)
-        df[symbol(bytestring(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
+        df[Symbol(bytestring(PQfname(result.ptr, i)))] = unsafe_fetchcol_dataarray(result, i)
     end
 
     return df

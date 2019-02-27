@@ -33,7 +33,7 @@ newpgtype(:int2, 21, (Int16,))
 newpgtype(:float8, 701, (Float64,))
 newpgtype(:float4, 700, (Float32,))
 newpgtype(:bpchar, 1042, ())
-newpgtype(:varchar, 1043, (ASCIIString,UTF8String))
+newpgtype(:varchar, 1043, (String,String))
 newpgtype(:text, 25, ())
 newpgtype(:numeric, 1700, (BigInt,BigFloat))
 newpgtype(:date, 1082, ())
@@ -50,8 +50,8 @@ newpgtype(:_int4, 1007, (Vector{Int32},))
 newpgtype(:_int2, 1005, (Vector{Int16},))
 newpgtype(:_float8, 1022, (Vector{Float64},))
 newpgtype(:_float4, 1021, (Vector{Float32},))
-newpgtype(:_varchar, 1015, (Vector{ASCIIString}, Vector{UTF8String}))
-newpgtype(:_text, 1009, (Vector{ASCIIString}, Vector{UTF8String}))
+newpgtype(:_varchar, 1015, (Vector{String}, Vector{String}))
+newpgtype(:_text, 1009, (Vector{String}, Vector{String}))
 
 
 typealias PGStringTypes Union{Type{PostgresType{:bpchar}},
@@ -151,10 +151,6 @@ function pgdata(::Type{PostgresType{:numeric}}, ptr::Ptr{UInt8}, data::Number)
     ptr = storestring!(ptr, string(data))
 end
 
-function pgdata(::PGStringTypes, ptr::Ptr{UInt8}, data::ByteString)
-    ptr = storestring!(ptr, data)
-end
-
 function pgdata(::PGStringTypes, ptr::Ptr{UInt8}, data::AbstractString)
     ptr = storestring!(ptr, bytestring(data))
 end
@@ -212,19 +208,11 @@ function pgdata(::Type{PostgresType{:_float4}}, ptr::Ptr{UInt8}, data::Vector{Fl
     ptr = storestring!(ptr, string("{", join(data, ','), "}"))
 end
 
-function pgdata(::Type{PostgresType{:_varchar}}, ptr::Ptr{UInt8}, data::Vector{ASCIIString})
+function pgdata(::Type{PostgresType{:_varchar}}, ptr::Ptr{UInt8}, data::Vector{String})
     ptr = storestring!(ptr, string("{", join(data, ','), "}"))
 end
 
-function pgdata(::Type{PostgresType{:_varchar}}, ptr::Ptr{UInt8}, data::Vector{UTF8String})
-    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
-end
-
-function pgdata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}, data::Vector{ASCIIString})
-    ptr = storestring!(ptr, string("{", join(data, ','), "}"))
-end
-
-function pgdata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}, data::Vector{UTF8String})
+function pgdata(::Type{PostgresType{:_text}}, ptr::Ptr{UInt8}, data::Vector{String})
     ptr = storestring!(ptr, string("{", join(data, ','), "}"))
 end
 

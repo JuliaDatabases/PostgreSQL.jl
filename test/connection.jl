@@ -8,9 +8,9 @@ function test_connection()
     @test conn.status == PostgreSQL.CONNECTION_OK
     @test errcode(conn) == PostgreSQL.CONNECTION_OK
     @test !conn.closed
-    @test bytestring(libpq.PQdb(conn.ptr)) == "julia_test"
-    @test bytestring(libpq.PQuser(conn.ptr)) == "postgres"
-    @test bytestring(libpq.PQport(conn.ptr)) == "5432"
+    @test unsafe_string(libpq.PQdb(conn.ptr)) == "julia_test"
+    @test unsafe_string(libpq.PQuser(conn.ptr)) == "postgres"
+    @test unsafe_string(libpq.PQport(conn.ptr)) == "5432"
 
     disconnect(conn)
     @test conn.closed
@@ -33,9 +33,9 @@ function test_connection()
     @test conn.status == PostgreSQL.CONNECTION_OK
     @test errcode(conn) == PostgreSQL.CONNECTION_OK
     @test !conn.closed
-    @test bytestring(libpq.PQdb(conn.ptr)) == "julia_test"
-    @test bytestring(libpq.PQuser(conn.ptr)) == "postgres"
-    @test bytestring(libpq.PQport(conn.ptr)) == "5432"
+    @test unsafe_string(libpq.PQdb(conn.ptr)) == "julia_test"
+    @test unsafe_string(libpq.PQuser(conn.ptr)) == "postgres"
+    @test unsafe_string(libpq.PQport(conn.ptr)) == "5432"
 
     disconnect(conn)
     @test conn.closed
