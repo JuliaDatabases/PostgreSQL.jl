@@ -1,0 +1,11 @@
+name = "PostgreSQL"
+uuid = "1b57947a-4062-48bc-bd42-99f27a2f9af8"
+license = "MIT"
+version = "0.1.0"
+
+[deps]
+DBInterface = "a10d1c49-ce27-4219-8d33-6db1a4562965"
+LibPQ = "194296ae-ab2e-5f79-8cd4-7183a0a5a0d1"
+
+[compat]
+julia = "1"
